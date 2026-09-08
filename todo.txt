@@ -1,0 +1,74 @@
+use Component-based architecture for both FE and BE
+store environment varaible in dotenv
+prettier to unify code
+
+FE: (use MUI lib)
+  front page:
+    copy UI of " https://phimmoic.io/ "
+    header change according when user is log in
+  authenticate page: (sign in / sign up):
+    basic UI
+    remember me
+    forgot password
+    allow sign in / up with gmail
+  specific film page: our_website_url.com/film/name_or_film_id_here
+    copy UI of " https://phimmoic.io/ " (minus share button)
+    film gerne, actors, years and other detail need to find an API from some public archive of movie to automatically get it
+    other film you might like:
+      will search based on same actor, director, gerne (have to look more into this)
+  specific film list critera: our_website_url.com/year | gerne | country | top | film (is also where our search url is)
+    copy UI...
+  search page:
+    display top film monthly innitally
+    has drop down button for user to choose from
+    ONLY search (db query will run) when user pess the search button
+  user profile page:
+    if user = you:
+      able to change name, avatar, see your own rating / comment on movie, list of following actor, director, ...
+    if user != you:
+      see their avatar, follow them, see their rating / comment ...
+
+BE: (use express as framework, postgresql as db, use docker to host db server)
+  folder structure: (ask AI)
+    contstant
+    controller
+    helper
+    middleware
+    migration
+    model
+    route
+    seeder
+    service
+    type
+  authenticate logic (refresh / access token) with bcrypt and jwt
+  route:
+    example of a route file with controller
+      import { Router } from 'express';
+
+      import { authenticate } from '~/helper/Authenticate';
+
+      import AuthController from '~/controller/auth.controller';
+      import signinValidation from '~/validation/signinValidation';
+      import signupValidation from '~/validation/signupValidation';
+
+      const AuthRouter = Router();
+
+      AuthRouter.post(
+        '/front_authenticate',
+        authenticate,
+        AuthController.frontUserAuthenticate
+      );
+      AuthRouter.post(
+        '/end_authenticate',
+        authenticate,
+        AuthController.endUserAuthenticate
+      );
+
+      AuthRouter.post('/signup', signupValidation, AuthController.userSignUp);
+      AuthRouter.post('/signin', signinValidation, AuthController.userSignIn);
+      AuthRouter.post('/signout', AuthController.userSignOut);
+
+      AuthRouter.post('/refresh_token', AuthController.generateAccessToken);
+
+      export default AuthRouter;
+  
