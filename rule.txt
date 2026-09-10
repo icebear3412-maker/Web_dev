@@ -1,8 +1,0 @@
-rule for coding and git:
-  before code make a different branch (git checkout -b branch_name) (optimally named feature/stuff_you_are_doing)
-  code one feature at a time, once done commit that feature (try to commit small, don't do feat: front page and it's a 1000+ lines of commit, very hard to check / read / review)
-  try to ask AI for knowledg and code it by hand, don't push AI code in (easier down the line since you already know what the code does, and can explain it easily to Mr. Son)
-  when commit read the code in the source control tab, and commit it, go to github.com, recheck the code you push CAREFULLY, and open a pull request when you sure it's good
-  (you can open a PR before hand but name it [WIP] the_thing_you_doing so that everyone know what you are doing)
-  notify other people once your code is done and ready to be reviewed by others, one there's no error / comment about said PR, merge it with main branch
-  
