@@ -1,4 +1,47 @@
 services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: sv_cinema_web
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:5000"
+
+    environment:
+      PORT: 5000
+
+      # JWT secret key used to sign and verify tokens.
+      # Must be provided through the host .env file.
+      SECRET_KEY: ${SECRET_KEY}
+
+      # How long an access token is valid (minutes).
+      JWT_ACCESS_EXPIRY_MINUTES: ${JWT_ACCESS_EXPIRY_MINUTES:-1440}
+
+      # How long a refresh token is valid (days).
+      JWT_REFRESH_EXPIRY_DAYS: ${JWT_REFRESH_EXPIRY_DAYS:-7}
+
+    volumes:
+      - cinema_data:/usr/src/app/server/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  cinema_data:services:
   db:
     image: postgres:16-alpine
     container_name: cinema_postgres
