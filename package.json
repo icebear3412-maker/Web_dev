@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "frontend": "vite",
-    "backend": "yarn nodemon --exec tsx src/index.ts",
+    "backend": "python src/be/run.py",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
   },
@@ -14,9 +14,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.4.0",
-    "@types/express": "^5.0.6",
     "bcrypt": "^6.0.0",
-    "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "nodemon": "^3.1.14",
     "prettier": "^3.9.6",
