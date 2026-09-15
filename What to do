@@ -1,0 +1,50 @@
+Before changing database code, read "backend/struct.py" this file is the blueprint ish, also take a look at the diagram database
+
+Use 'backend/db.py' for all PostgreSQL connections. Do not create another connection file or connect directly from the frontend.
+
+Database rules:
+1. 'users' is the only source for user name, email, phone, password, and account details.
+   - 'bookings' must use 'user_id'.
+   - When displaying booking customer information, use a SQL 'JOIN' with 'users'.
+   - Do not copy customer name, email, or phone into 'bookings'.
+
+2. 'showtimes' connects a movie to a cinema room.
+   - 'movie_id' links to 'movies.id'.
+   - 'cinema_room_number' links to 'cinema_rooms.room_number'.
+   - A booking must use 'showtime_id', not direct movie or room IDs.
+
+3. Seats are managed separately.
+   - 'seats' contains all seats for each cinema room.
+   - 'booking_seats' records which seat IDs belong to one booking.
+   - Check that a seat is not already booked for the same showtime before confirming a booking.
+
+4. Cinema-room images belong in 'cinema_room_images'.
+   - One cinema room may have multiple images.
+   - Use 'cinema_room_id' to find the images for a room.
+
+5. Refresh tokens belong in 'refresh_tokens'.
+   - Save only a hashed refresh token in 'token_hash'.
+   - Never save raw refresh tokens or raw passwords.
+   - Set 'revoked_at' when the user signs out.
+
+6. Every new table must include:
+   - a primary key
+   - 'created_at'
+   - 'updated_at'
+   - foreign keys where needed
+   - unique rules where duplicate data must be prevented
+
+7. When changing database structure:
+   - update 'backend/app/struct.py'
+   - update 'database-diagram.dbml'
+   - keep migrations safe for existing databases
+   - do not remove old columns or tables unless the team agrees first
+
+8. Keep backend files focused:
+   - 'accounts.py': users, login, refresh tokens
+   - 'bookings.py': bookings, booking seats, booking history
+   - 'movies.py': movie data
+   - 'admin.py': admin management actions
+   - 'struct.py': tables, relationships, migrations, and timestamp triggers
+
+After making changes, test that the backend starts and that booking, login, and admin functions still work.
