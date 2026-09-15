@@ -1,4 +1,4 @@
-from app.shared_utils.db import get_db_connection
+from """holder""" import """holder"""
 
 def run_migrations():
     #Create all required PostgreSQL tables if they don't already exist.
