@@ -1,6 +1,7 @@
+import React from 'react';
 import { Box } from '@mui/material';
 
-const SignIn = () => {
+const SignIn: React.FC = () => {
   return (
     <Box>
       <h1>Sign In</h1>
