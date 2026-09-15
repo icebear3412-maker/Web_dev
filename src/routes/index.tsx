@@ -4,7 +4,7 @@ import DefaultLayout from '@/layouts/DefaultLayout';
 
 import LandingPage from '@/pages/Landing';
 
-const publicRoutes: IRoute[] = [{ path: '/', component: LandingPage, layout: DefaultLayout }];
+const publicRoutes: IRoute[] = [{ path: '', component: LandingPage, layout: DefaultLayout }];
 
 const privateRoutes: IRoute[] = [];
 
