@@ -1,15 +1,39 @@
 import React from 'react';
 
-import FrontPage from '@/pages/Landing/Component/FrontPage';
-import { CssBaseline } from '@mui/material';
+import Header from '@/components/header/Header';
+import NavigationBar from '@/components/navigation/NavigationBar';
+import QuickLinks from '@/components/common/QuickLinks';
+import HeroSection from '@/components/hero/HeroSection';
+import MovieSection from '@/components/movie/MovieSection';
+import EventSection from '@/components/event/EventSection';
+import CinemaRoomBanner from '@/components/cinema/CinemaRoomBanner';
+import Partners from '@/components/partner/Partners';
+import Footer from '@/components/footer/Footer';
 
-const LandingPage: React.FC = () => {
+const FrontPage: React.FC = () => {
   return (
-    <>
-      <CssBaseline />
-      <FrontPage />
-    </>
+    <div className="cgv-page">
+      <Header />
+
+      <NavigationBar />
+
+      <QuickLinks />
+
+      <main>
+        <HeroSection />
+
+        <MovieSection />
+
+        <EventSection />
+
+        <CinemaRoomBanner />
+
+        <Partners />
+      </main>
+
+      <Footer />
+    </div>
   );
 };
 
-export default LandingPage;
+export default FrontPage;
