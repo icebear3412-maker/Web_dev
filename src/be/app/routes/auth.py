@@ -1,7 +1,12 @@
 from flask import Blueprint, request
 import bcrypt
+import jwt
+import secrets
+from datetime import datetime, timedelta
 from app.database import get_db
 
+
+JWT_SECRET = "change-this-to-a-random-secret"
 
 # Create a group of authentication routes
 auth_router = Blueprint("auth", __name__)
@@ -74,7 +79,7 @@ def login():
     if not email or not password:
         return {"error": "Email and password are required"}, 400
 
-    # Connect to our database
+    # Connect to the database
     db = get_db()
 
     # Find the user with this email
@@ -98,14 +103,25 @@ def login():
         password.encode("utf-8"),
         stored_hash
     )
-
     # Reject the login if the password is incorrect
     if not password_correct:
         return {"error": "Invalid email or password"}, 401
 
-    # Login was successful
+    # Create an access token for the logged-in user
+    access_token = jwt.encode(
+        {
+            "user_id": user["id"],
+            "email": user["email"],
+            "exp": datetime.utcnow() + timedelta(minutes=15)
+        },
+        JWT_SECRET,
+        algorithm="HS256"
+    )
+
+    # Send the access token back to the frontend
     return {
         "message": "Login successful",
+        "accessToken": access_token,
         "user": {
             "id": user["id"],
             "email": user["email"]

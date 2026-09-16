@@ -28,7 +28,15 @@ def init_db():
             password_hash TEXT NOT NULL
         )
     """)
-
+    # Create the keys table for storing refresh tokens
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS keys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            refresh_token TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
     # Save the changes
     connection.commit()
 
