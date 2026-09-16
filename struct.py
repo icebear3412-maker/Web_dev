@@ -109,22 +109,6 @@ def run_migrations():
                 );
             """)
 
-            #Only a hash is saved, so a stolen database cannot reveal real refresh tokens.
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS refresh_tokens (
-                    -- A unique ID for this saved login session.
-                    id VARCHAR(255) PRIMARY KEY,
-                    -- The account that owns this refresh token. Deleting the user also deletes its tokens.
-                    user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                    -- A one-way fingerprint of the real token; the real token is never stored here.
-                    token_hash VARCHAR(128) UNIQUE NOT NULL, expires_at TIMESTAMPTZ NOT NULL,
-                    -- Filled in at sign-out to make the token unusable before its expiry date.
-                    revoked_at TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                    -- Automatically changed by the update trigger when this token record changes.
-                    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-                );
-            """)
-
             #CREATE TABLE does not add fields to old tables, so upgrade them one column at a time.
             additions = {
                 "users": [("updated_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")],
@@ -193,7 +177,7 @@ def run_migrations():
                 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS trigger AS $$
                 BEGIN NEW.updated_at = CURRENT_TIMESTAMP; RETURN NEW; END; $$ LANGUAGE plpgsql;
             """)
-            for table in ("users", "movies", "cinema_rooms", "cinema_room_images", "seats", "showtimes", "bookings", "booking_seats", "refresh_tokens"):
+            for table in ("users", "movies", "cinema_rooms", "cinema_room_images", "seats", "showtimes", "bookings", "booking_seats"):
                 #Recreate the trigger safely so every listed table receives the same behavior.
                 cur.execute(f"DROP TRIGGER IF EXISTS {table}_updated_at ON {table};")
                 cur.execute(f"CREATE TRIGGER {table}_updated_at BEFORE UPDATE ON {table} FOR EACH ROW EXECUTE FUNCTION set_updated_at();")
