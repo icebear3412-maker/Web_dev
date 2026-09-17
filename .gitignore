@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Python runtime and database
+.venv/
+__pycache__/
+src/be/instance/
+
+# Private configuration and local credentials
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
