@@ -6,8 +6,9 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import type { SvgIconComponent } from '@mui/icons-material';
 
-const links = [
+const links: [string, SvgIconComponent][] = [
   ['RẠP CINEMA', MovieIcon],
   ['PHIM ĐANG CHIẾU', LocalMoviesIcon],
   ['CINEMA SPECIAL', LocalOfferIcon],

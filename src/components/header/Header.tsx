@@ -1,4 +1,11 @@
-import { Box, Button, Container, Divider, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Container,
+  Divider,
+  Stack,
+  Typography,
+} from '@mui/material';
 
 function Header() {
   return (
@@ -9,9 +16,14 @@ function Header() {
             <Button className="utility-link">TIN MỚI & ƯU ĐÃI</Button>
             <Button className="utility-link">VÉ CỦA TÔI</Button>
           </Stack>
+
           <Stack direction="row" spacing={2} alignItems="center">
-            <Button className="utility-link">ĐĂNG NHẬP / ĐĂNG KÝ</Button>
+            <Button className="utility-link">
+              ĐĂNG NHẬP / ĐĂNG KÝ
+            </Button>
+
             <Divider orientation="vertical" flexItem />
+
             <Button className="utility-link language-active">VN</Button>
             <Button className="utility-link">EN</Button>
           </Stack>
@@ -22,9 +34,12 @@ function Header() {
         <Container maxWidth="lg" className="main-header-inner">
           <Box className="brand" aria-label="Cinema home">
             <span className="brand-mark">C</span>
+
             <Box>
               <Typography className="brand-name">CINEMA</Typography>
-              <Typography className="brand-subtitle">MOVIE EXPERIENCE</Typography>
+              <Typography className="brand-subtitle">
+                MOVIE EXPERIENCE
+              </Typography>
             </Box>
           </Box>
 

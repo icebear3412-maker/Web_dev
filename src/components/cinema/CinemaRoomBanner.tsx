@@ -6,13 +6,23 @@ function CinemaRoomBanner() {
       <Container maxWidth="lg">
         <Box className="room-banner">
           <Box>
-            <Typography className="room-kicker">SPECIAL EXPERIENCE</Typography>
-            <Typography className="room-title">ĐẶT TRỌN PHÒNG CHIẾU</Typography>
+            <Typography className="room-kicker">
+              SPECIAL EXPERIENCE
+            </Typography>
+
+            <Typography className="room-title">
+              ĐẶT TRỌN PHÒNG CHIẾU
+            </Typography>
+
             <Typography className="room-text">
               Không gian riêng tư cho sinh nhật, sự kiện và những buổi gặp gỡ đặc biệt.
             </Typography>
-            <Button className="room-button">KHÁM PHÁ NGAY</Button>
+
+            <Button className="room-button">
+              KHÁM PHÁ NGAY
+            </Button>
           </Box>
+
           <Box className="room-price">
             TỪ
             <br />

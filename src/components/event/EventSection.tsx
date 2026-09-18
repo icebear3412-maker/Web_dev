@@ -1,9 +1,16 @@
 import { Box, Card, CardMedia, Container, Typography } from '@mui/material';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
+
 import 'swiper/css';
 
-const events = [
+interface Event {
+  title: string;
+  text: string;
+  image: string;
+}
+
+const events: Event[] = [
   {
     title: 'WEEKEND MOVIE FEST',
     text: 'Ưu đãi cho hội bạn thân vào cuối tuần.',
@@ -28,20 +35,32 @@ function EventSection() {
   return (
     <section className="event-section">
       <Container maxWidth="lg">
-        <Typography className="section-title">SỰ KIỆN </Typography>
+        <Typography className="section-title">SỰ KIỆN</Typography>
+
         <Swiper
           modules={[Autoplay]}
           autoplay={{ delay: 3500 }}
           spaceBetween={20}
           slidesPerView={2}
-          breakpoints={{ 0: { slidesPerView: 1 }, 800: { slidesPerView: 2 } }}
+          breakpoints={{
+            0: { slidesPerView: 1 },
+            800: { slidesPerView: 2 },
+          }}
         >
           {events.map((event) => (
             <SwiperSlide key={event.title}>
               <Card className="event-card">
-                <CardMedia component="img" image={event.image} alt={event.title} />
+                <CardMedia
+                  component="img"
+                  image={event.image}
+                  alt={event.title}
+                />
+
                 <Box className="event-overlay">
-                  <Typography className="event-title">{event.title}</Typography>
+                  <Typography className="event-title">
+                    {event.title}
+                  </Typography>
+
                   <Typography>{event.text}</Typography>
                 </Box>
               </Card>

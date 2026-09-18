@@ -6,7 +6,13 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-const slides = [
+interface Slide {
+  title: string;
+  subtitle: string;
+  image: string;
+}
+
+const slides: Slide[] = [
   {
     title: 'LÊN HƯƠNG',
     subtitle: 'Những câu chuyện xứng đáng được nhìn thấy trên màn ảnh lớn.',
@@ -21,7 +27,8 @@ const slides = [
   },
   {
     title: 'VÙNG ĐẤT QUỶ DỮ',
-    subtitle: 'Một phiên bản Resident Evil mới trở lại đầy kịch tính và kinh hoàng.',
+    subtitle:
+      'Một phiên bản Resident Evil mới trở lại đầy kịch tính và kinh hoàng.',
     image:
       'https://static-cgv.vncdn.vn/media/banner/cache/1/b58515f018eb873dafa430b6f9ae0c1e/9/8/980x448_67__9.jpg',
   },
@@ -62,11 +69,17 @@ function HeroSection() {
                   }}
                 >
                   <Box className="hero-copy">
-                    <Typography className="hero-kicker">NOW SHOWING</Typography>
+                    <Typography className="hero-kicker">
+                      NOW SHOWING
+                    </Typography>
 
-                    <Typography className="hero-title">{slide.title}</Typography>
+                    <Typography className="hero-title">
+                      {slide.title}
+                    </Typography>
 
-                    <Typography className="hero-subtitle">{slide.subtitle}</Typography>
+                    <Typography className="hero-subtitle">
+                      {slide.subtitle}
+                    </Typography>
 
                     <Button className="hero-button">XEM PHIM</Button>
                   </Box>

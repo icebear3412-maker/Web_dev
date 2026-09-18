@@ -1,10 +1,25 @@
-import { Box, Button, Card, CardContent, Container, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  Typography,
+} from '@mui/material';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
+
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-const movies = [
+interface Movie {
+  title: string;
+  age: string;
+  genre: string;
+  image: string;
+}
+
+const movies: Movie[] = [
   {
     title: 'The Amazing Spider-man 3',
     age: 'T13',
@@ -66,13 +81,24 @@ function MovieSection() {
           {movies.map((movie) => (
             <SwiperSlide key={movie.title}>
               <Card className="movie-card">
-                <Box className="movie-poster" sx={{ backgroundImage: `url(${movie.image})` }}>
+                <Box
+                  className="movie-poster"
+                  sx={{
+                    backgroundImage: `url(${movie.image})`,
+                  }}
+                >
                   <span className="age-badge">{movie.age}</span>
                   <Button className="movie-book-button">MUA VÉ</Button>
                 </Box>
+
                 <CardContent className="movie-info">
-                  <Typography className="movie-title">{movie.title}</Typography>
-                  <Typography className="movie-genre">{movie.genre}</Typography>
+                  <Typography className="movie-title">
+                    {movie.title}
+                  </Typography>
+
+                  <Typography className="movie-genre">
+                    {movie.genre}
+                  </Typography>
                 </CardContent>
               </Card>
             </SwiperSlide>

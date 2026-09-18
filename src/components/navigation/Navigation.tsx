@@ -18,11 +18,8 @@ function NavigationBar() {
           }}
         >
           <Button color="inherit">MOVIES</Button>
-
           <Button color="inherit">CINEMAS</Button>
-
           <Button color="inherit">PROMOTIONS</Button>
-
           <Button color="inherit">MEMBERSHIP</Button>
         </Box>
       </Container>
