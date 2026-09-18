@@ -1,7 +1,6 @@
 import React from 'react';
 
 import Header from '@/components/header';
-import NavigationBar from '@/components/navigation';
 import QuickLinks from '@/components/common';
 import HeroSection from '@/components/hero';
 import MovieSection from '@/components/movie';
@@ -14,8 +13,6 @@ const FrontPage: React.FC = () => {
   return (
     <div className="cgv-page">
       <Header />
-
-      <NavigationBar />
 
       <QuickLinks />
 
