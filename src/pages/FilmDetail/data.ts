@@ -1,3 +1,4 @@
+import type { CinemaRoom } from '@/shared/cinemaRooms';
 export interface Movie {
   id: string;
   slug?: string;
@@ -12,13 +13,6 @@ export interface Movie {
   genres?: string[];
   trailerUrl?: string;
 }
-export interface CinemaRoom {
-  id: string;
-  room_number: number;
-  name: string;
-  type: string;
-  capacity?: number;
-}
 export interface Showtime {
   id: string;
   movie_id: string;
@@ -31,16 +25,12 @@ export interface FilmDetailData {
   movies: Movie[];
   rooms: CinemaRoom[];
   showtimes: Showtime[];
-  roomCinemaIds: Record<string, string>;
-  cinemas: import('@/shared/cinemaLocations').Cinema[];
 }
 // No fallback content: the backend integration must supply real records.
 export const emptyFilmData: FilmDetailData = {
   movies: [],
   rooms: [],
   showtimes: [],
-  roomCinemaIds: {},
-  cinemas: [],
 };
 export function getScreenings(
   movieId: string,

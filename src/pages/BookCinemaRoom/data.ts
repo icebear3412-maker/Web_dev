@@ -1,5 +1,6 @@
 import { localDate } from '@/helpers/date';
-import { cinemas, cities } from '@/shared/cinemaLocations';
+import { cities, emptyRooms, roomTypesForCity } from '@/shared/cinemaRooms';
+import type { CinemaRoom } from '@/shared/cinemaRooms';
 export const services = [
   {
     name: 'Group Booking',
@@ -77,7 +78,7 @@ export interface RentalForm {
   date: string;
   guests: string;
   city: string;
-  cinema: string;
+  roomType: string;
   note: string;
 }
 export const emptyForm: RentalForm = {
@@ -90,18 +91,12 @@ export const emptyForm: RentalForm = {
   date: '',
   guests: '',
   city: '',
-  cinema: '',
+  roomType: '',
   note: '',
 };
-export const locations: Record<string, string[]> = Object.fromEntries(
-  cities.map((city) => [
-    city,
-    cinemas.filter((cinema) => cinema.city === city).map((cinema) => cinema.name),
-  ]),
-);
 export function validateRental(
   form: RentalForm,
-  availableLocations: Record<string, string[]> = locations,
+  rooms: CinemaRoom[] = emptyRooms,
 ): Partial<Record<keyof RentalForm, string>> {
   const errors: Partial<Record<keyof RentalForm, string>> = {};
   if (form.name.trim().length < 2) errors.name = 'Nhập họ tên từ 2 ký tự.';
@@ -122,9 +117,9 @@ export function validateRental(
     errors.guests = 'Nhập số khách từ 1 đến 500.';
   else if (form.service === 'Group Booking' && guests < 20)
     errors.guests = 'Xem phim theo nhóm dành cho ít nhất 20 khách.';
-  if (!availableLocations[form.city]) errors.city = 'Chọn khu vực tổ chức.';
-  if (!availableLocations[form.city]?.includes(form.cinema))
-    errors.cinema = 'Chọn cụm rạp phù hợp.';
+  if (!cities.includes(form.city)) errors.city = 'Chọn khu vực tổ chức.';
+  if (!roomTypesForCity(rooms, form.city).includes(form.roomType))
+    errors.roomType = 'Chọn loại phòng phù hợp với thành phố.';
   if (!services.some((service) => service.name === form.service)) errors.service = 'Chọn dịch vụ.';
   return errors;
 }

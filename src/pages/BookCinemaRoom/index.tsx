@@ -13,7 +13,9 @@ import {
 } from '@mui/material';
 import CinemaLayout from '@/layouts/CinemaLayout';
 import { localDate } from '@/helpers/date';
-import { emptyForm, locations, services, validateRental } from './data';
+import { emptyForm, services, validateRental } from './data';
+import { cities, emptyRooms, roomTypesForCity } from '@/shared/cinemaRooms';
+import type { CinemaRoom } from '@/shared/cinemaRooms';
 import type { RentalForm } from './data';
 import './styles.css';
 
@@ -26,18 +28,19 @@ function SectionTitle({ children }: { children: string }) {
     </div>
   );
 }
-export default function BookCinemaRoom() {
+export default function BookCinemaRoom({ rooms = emptyRooms }: { rooms?: CinemaRoom[] }) {
   const [form, setForm] = useState<RentalForm>({ ...emptyForm });
   const [touched, setTouched] = useState<Partial<Record<keyof RentalForm, boolean>>>({});
   const [attempted, setAttempted] = useState(false);
   const [tab, setTab] = useState(2);
   const service = services[tab];
-  const errors = validateRental(form);
+  const errors = validateRental(form, rooms);
+  const roomTypes = roomTypesForCity(rooms, form.city);
   const update = (name: keyof RentalForm, value: string | boolean) => {
     setForm((previous) => ({
       ...previous,
       [name]: value,
-      ...(name === 'city' ? { cinema: '' } : {}),
+      ...(name === 'city' ? { roomType: '' } : {}),
     }));
   };
   const fieldError = (name: keyof RentalForm) =>
@@ -211,14 +214,14 @@ export default function BookCinemaRoom() {
                 fullWidth
                 required
                 id="rental-city"
-                label="Khu vực"
+                label="Thành phố"
                 value={form.city}
                 onChange={(event) => update('city', event.target.value)}
                 onBlur={blur('city')}
                 error={!!fieldError('city')}
                 helperText={fieldError('city')}
               >
-                {Object.keys(locations).map((city) => (
+                {cities.map((city) => (
                   <MenuItem value={city} key={city}>
                     {city}
                   </MenuItem>
@@ -229,21 +232,23 @@ export default function BookCinemaRoom() {
                   select
                   fullWidth
                   required
-                  id="rental-cinema"
-                  label="Cụm rạp"
-                  disabled={!form.city || !locations[form.city]?.length}
-                  value={form.cinema}
-                  onChange={(event) => update('cinema', event.target.value)}
-                  onBlur={blur('cinema')}
-                  error={!!fieldError('cinema')}
+                  id="rental-roomType"
+                  label="Loại phòng chiếu"
+                  disabled={!form.city || !roomTypes.length}
+                  value={form.roomType}
+                  onChange={(event) => update('roomType', event.target.value)}
+                  onBlur={blur('roomType')}
+                  error={!!fieldError('roomType')}
                   helperText={
-                    fieldError('cinema') ||
-                    (form.city && !locations[form.city]?.length ? 'Chưa có thông tin cụm rạp.' : '')
+                    fieldError('roomType') ||
+                    (form.city && !roomTypes.length
+                      ? 'Chưa có thông tin loại phòng tại thành phố này.'
+                      : '')
                   }
                 >
-                  {(locations[form.city] ?? []).map((cinema) => (
-                    <MenuItem value={cinema} key={cinema}>
-                      {cinema}
+                  {roomTypes.map((roomType) => (
+                    <MenuItem value={roomType} key={roomType}>
+                      {roomType}
                     </MenuItem>
                   ))}
                 </TextField>

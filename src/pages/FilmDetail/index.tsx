@@ -26,12 +26,12 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CinemaLayout from '@/layouts/CinemaLayout';
 import { emptyFilmData, getScreenings } from './data';
 import type { FilmDetailData } from './data';
-import { cities } from '@/shared/cinemaLocations';
+import { cities } from '@/shared/cinemaRooms';
 import { localDate } from '@/helpers/date';
 import './styles.css';
 
 export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetailData }) {
-  const { movies, rooms, showtimes, roomCinemaIds, cinemas } = data;
+  const { movies, rooms, showtimes } = data;
   const roomTypes = [...new Set(rooms.map((room) => room.type))].map((type) => ({
     id: type,
     name: type,
@@ -46,7 +46,6 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
   const [showtimeId, setShowtimeId] = useState('');
   const [bookingOpen, setBookingOpen] = useState(false);
   const [city, setCity] = useState('');
-  const [cinemaId, setCinemaId] = useState('');
   const [posterError, setPosterError] = useState(false);
   const screeningsRef = useRef<HTMLElement>(null);
   const dates = [
@@ -56,12 +55,8 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
   ]
     .sort()
     .map((value) => ({ value, label: value, day: value }));
-  const cityCinemas = cinemas.filter((cinema) => cinema.city === city);
-  const selectedCinema = cityCinemas.find((cinema) => cinema.id === cinemaId);
   const dayScreenings = getScreenings(movie?.id ?? '', date, showtimes, rooms).filter(
-    (slot) =>
-      cityCinemas.some((cinema) => cinema.id === roomCinemaIds[slot.room.id]) &&
-      (!cinemaId || roomCinemaIds[slot.room.id] === cinemaId),
+    (slot) => slot.room.city === city,
   );
   const availableTypes = roomTypes.filter((type) =>
     dayScreenings.some((slot) => slot.room.type === type.id),
@@ -70,9 +65,6 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
     (slot) => roomType === 'ALL' || slot.room.type === roomType,
   );
   const selectedShowtime = visibleScreenings.find((slot) => slot.id === showtimeId);
-  const bookingCinema = cinemas.find(
-    (cinema) => cinema.id === (selectedShowtime && roomCinemaIds[selectedShowtime.room.id]),
-  );
   const selectRoomType = (value: string) => {
     setRoomType(value);
     setShowtimeId('');
@@ -107,7 +99,6 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
         };
         const nearest = centers.sort((a, b) => distance(a) - distance(b))[0];
         setCity(nearest.name);
-        setCinemaId('');
         selectRoomType('ALL');
         setLocating(false);
         setLocationMessage(`Đã chọn ${nearest.name}, khu vực gần bạn nhất trong danh sách.`);
@@ -238,7 +229,7 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
             </div>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Chọn nơi bạn muốn xem phim, sau đó chọn ngày và suất chiếu.
+            Chọn thành phố và ngày để xem giờ chiếu theo loại phòng.
           </Typography>
           {locationMessage && (
             <Alert severity="info" sx={{ mb: 2 }}>
@@ -247,14 +238,13 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
           )}
           <Box className="location-filters">
             <FormControl fullWidth>
-              <InputLabel id="city-label">1. Chọn thành phố</InputLabel>
+              <InputLabel id="city-label">Chọn thành phố</InputLabel>
               <Select
                 labelId="city-label"
-                label="1. Chọn thành phố"
+                label="Chọn thành phố"
                 value={city}
                 onChange={(event) => {
                   setCity(event.target.value);
-                  setCinemaId('');
                   selectRoomType('ALL');
                 }}
               >
@@ -265,29 +255,7 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
                 ))}
               </Select>
             </FormControl>
-            <FormControl fullWidth disabled={!city || !cityCinemas.length}>
-              <InputLabel id="branch-label">2. Chọn cụm rạp</InputLabel>
-              <Select
-                labelId="branch-label"
-                label="2. Chọn cụm rạp"
-                value={cinemaId}
-                onChange={(event) => {
-                  setCinemaId(event.target.value);
-                  selectRoomType('ALL');
-                }}
-              >
-                <MenuItem value="">Tất cả rạp trong thành phố</MenuItem>
-                {cityCinemas.map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
           </Box>
-          {city && !cityCinemas.length && (
-            <Typography color="text.secondary">Chưa có thông tin cụm rạp.</Typography>
-          )}
           <Box className="date-strip" aria-label="Chọn ngày chiếu">
             {!dates.length && <Typography color="text.secondary">Chưa có ngày chiếu.</Typography>}
             {dates.map((item) => (
@@ -345,71 +313,39 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
                   {!showtimes.length
                     ? 'Lịch chiếu hiện chưa có thông tin.'
                     : !city
-                      ? 'Chọn thành phố để xem các rạp và giờ chiếu.'
+                      ? 'Chọn thành phố để xem loại phòng và giờ chiếu.'
                       : 'Bạn hãy chọn ngày hoặc loại phòng khác.'}
                 </Typography>
               </Box>
             ) : (
-              cityCinemas
-                .filter((cinema) =>
-                  visibleScreenings.some((slot) => roomCinemaIds[slot.room.id] === cinema.id),
-                )
-                .map((cinema) => (
-                  <Box className="screening-card" key={cinema.id}>
-                    <Box className="screening-card-heading">
-                      <div>
-                        <Typography component="h3" variant="h5">
-                          {cinema.name}
-                        </Typography>
-                        <Typography color="text.secondary" variant="body2">
-                          <PlaceOutlinedIcon sx={{ fontSize: 16, verticalAlign: 'middle' }} />{' '}
-                          {cinema.address}
-                        </Typography>
-                      </div>
-                      <Typography className="screening-day">
-                        {dates.find((item) => item.value === date)?.day}
-                      </Typography>
-                    </Box>
-                    {availableTypes
-                      .filter((type) =>
-                        visibleScreenings.some(
-                          (slot) =>
-                            slot.room.type === type.id && roomCinemaIds[slot.room.id] === cinema.id,
-                        ),
-                      )
-                      .map((type) => (
-                        <Box className="screening-type-row" key={type.id}>
-                          <Box className="screening-type-label">
-                            <strong>{type.name}</strong>
-                          </Box>
-                          <Stack direction="row" sx={{ gap: 1.5, flexWrap: 'wrap' }}>
-                            {visibleScreenings
-                              .filter(
-                                (slot) =>
-                                  slot.room.type === type.id &&
-                                  roomCinemaIds[slot.room.id] === cinema.id,
-                              )
-                              .sort((a, b) => a.show_time.localeCompare(b.show_time))
-                              .map((slot) => (
-                                <Button
-                                  key={slot.id}
-                                  variant="outlined"
-                                  className="showtime-tile"
-                                  aria-label={`${cinema.name}, ${slot.show_time}, ${type.name}, ${slot.room.name}`}
-                                  onClick={() => {
-                                    setCinemaId(cinema.id);
-                                    setShowtimeId(slot.id);
-                                    setBookingOpen(true);
-                                  }}
-                                >
-                                  <strong>{slot.show_time}</strong>
-                                  <span>{slot.room.name}</span>
-                                  <small>Chọn suất →</small>
-                                </Button>
-                              ))}
-                          </Stack>
-                        </Box>
-                      ))}
+              availableTypes
+                .filter((type) => visibleScreenings.some((slot) => slot.room.type === type.id))
+                .map((type) => (
+                  <Box className="screening-card" key={type.id}>
+                    <Typography component="h3" variant="h5" sx={{ mb: 2 }}>
+                      {type.name}
+                    </Typography>
+                    <Stack direction="row" sx={{ gap: 1.5, flexWrap: 'wrap' }}>
+                      {visibleScreenings
+                        .filter((slot) => slot.room.type === type.id)
+                        .sort((a, b) => a.show_time.localeCompare(b.show_time))
+                        .map((slot) => (
+                          <Button
+                            key={slot.id}
+                            variant="outlined"
+                            className="showtime-tile"
+                            aria-label={`${slot.show_time}, ${type.name}, Phòng ${slot.room.room_number}`}
+                            onClick={() => {
+                              setShowtimeId(slot.id);
+                              setBookingOpen(true);
+                            }}
+                          >
+                            <strong>{slot.show_time}</strong>
+                            <span>Phòng {slot.room.room_number}</span>
+                            <small>Chọn suất →</small>
+                          </Button>
+                        ))}
+                    </Stack>
                   </Box>
                 ))
             )}
@@ -465,32 +401,20 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" disabled={!city || !cityCinemas.length}>
-            <InputLabel shrink id="quick-cinema-label">
-              Cụm rạp
-            </InputLabel>
+          <FormControl size="small">
+            <InputLabel id="quick-city-label">Thành phố</InputLabel>
             <Select
-              labelId="quick-cinema-label"
-              label="Cụm rạp"
-              displayEmpty
-              renderValue={(value) =>
-                cityCinemas.find((item) => item.id === value)?.name ||
-                (!city
-                  ? 'Chọn thành phố trước'
-                  : !cityCinemas.length
-                    ? 'Chưa có cụm rạp'
-                    : 'Tất cả rạp')
-              }
-              value={cinemaId}
+              labelId="quick-city-label"
+              label="Thành phố"
+              value={city}
               onChange={(event) => {
-                setCinemaId(event.target.value);
+                setCity(event.target.value);
                 selectRoomType('ALL');
               }}
             >
-              <MenuItem value="">Tất cả rạp</MenuItem>
-              {cityCinemas.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
-                  {item.name}
+              {cities.map((item) => (
+                <MenuItem key={item} value={item}>
+                  {item}
                 </MenuItem>
               ))}
             </Select>
@@ -516,7 +440,7 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
               ))}
             </Select>
           </FormControl>
-          <FormControl size="small" disabled={!selectedCinema || !visibleScreenings.length}>
+          <FormControl size="small" disabled={!city || !visibleScreenings.length}>
             <InputLabel shrink id="quick-time-label">
               Giờ chiếu
             </InputLabel>
@@ -566,7 +490,7 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
             {movie?.title?.trim() || 'Chưa có tên phim'}
           </Typography>
           <Typography>
-            {bookingCinema?.name} · {selectedShowtime?.room.name}
+            {city} · Phòng {selectedShowtime?.room.room_number}
           </Typography>
           <Typography sx={{ my: 1 }}>
             {dates.find((item) => item.value === date)?.day} · {selectedShowtime?.show_time}
