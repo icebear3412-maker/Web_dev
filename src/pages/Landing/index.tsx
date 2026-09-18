@@ -1,14 +1,14 @@
 import React from 'react';
 
-import Header from '@/components/header/Header';
-import NavigationBar from '@/components/navigation/NavigationBar';
-import QuickLinks from '@/components/common/QuickLinks';
-import HeroSection from '@/components/hero/HeroSection';
-import MovieSection from '@/components/movie/MovieSection';
-import EventSection from '@/components/event/EventSection';
-import CinemaRoomBanner from '@/components/cinema/CinemaRoomBanner';
-import Partners from '@/components/partner/Partners';
-import Footer from '@/components/footer/Footer';
+import Header from '@/components/header';
+import NavigationBar from '@/components/navigation';
+import QuickLinks from '@/components/common';
+import HeroSection from '@/components/hero';
+import MovieSection from '@/components/movie';
+import EventSection from '@/components/event';
+import CinemaRoomBanner from '@/components/cinema';
+import Partners from '@/components/partner';
+import Footer from '@/components/footer';
 
 const FrontPage: React.FC = () => {
   return (
