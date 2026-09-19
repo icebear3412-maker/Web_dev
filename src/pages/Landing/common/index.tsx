@@ -12,7 +12,7 @@ const links: [string, SvgIconComponent][] = [
   ['RẠP CINEMA', MovieIcon],
   ['PHIM ĐANG CHIẾU', LocalMoviesIcon],
   ['CINEMA SPECIAL', LocalOfferIcon],
-  ['THUÊ PHÒNG & GROUP SALE', GroupsIcon],
+  ['THUÊ RẠP & SỰ KIỆN', GroupsIcon],
   ['LIÊN HỆ CINEMA', PhoneIcon],
   ['TIN MỚI & ƯU ĐÃI', ConfirmationNumberIcon],
   ['ĐĂNG KÝ NGAY', PersonAddIcon],
