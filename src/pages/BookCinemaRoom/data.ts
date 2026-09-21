@@ -1,6 +1,6 @@
 import { localDate } from '@/helpers/date';
 import { cities, emptyRooms, roomTypesForCity } from '@/shared/cinemaRooms';
-import type { CinemaRoom } from '@/shared/cinemaRooms';
+import type { CinemaRoom, RentalForm } from '@/types/cinema';
 export const services = [
   {
     name: 'Group Booking',
@@ -68,19 +68,6 @@ export const services = [
     image: '/images/usth-auditorium.png',
   },
 ];
-export interface RentalForm {
-  name: string;
-  phone: string;
-  email: string;
-  address: string;
-  company: string;
-  service: string;
-  date: string;
-  guests: string;
-  city: string;
-  roomType: string;
-  note: string;
-}
 export const emptyForm: RentalForm = {
   name: '',
   phone: '',

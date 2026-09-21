@@ -105,9 +105,6 @@
   padding: 3px 6px;
 }
 .showtimes-section {
-  background: #101e34;
-  border: 1px solid #ffffff0c;
-  padding: 32px;
   scroll-margin-top: 24px;
 }
 .section-heading-row {
@@ -134,13 +131,11 @@
   overflow-x: auto;
   gap: 8px;
   border-bottom: 1px solid #ffffff16;
-  padding: 24px 0 18px;
 }
 .date-button {
   display: flex !important;
   flex-direction: column;
   gap: 7px;
-  min-width: 88px !important;
   color: #a5b4cb !important;
   padding: 12px !important;
 }
@@ -150,10 +145,6 @@
 .date-button strong {
   font-size: 18px;
 }
-.date-button.selected {
-  background: #2e65ae !important;
-  color: #fff !important;
-}
 .cinema-empty {
   display: flex;
   flex-direction: column;
@@ -162,15 +153,6 @@
   gap: 12px;
   padding: 44px 10px;
   color: #a7bad6;
-}
-.screening-card {
-  padding: 26px 0 4px;
-}
-.screening-card-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: center;
 }
 
 .private-screening {
@@ -194,8 +176,6 @@
   flex-shrink: 0;
 }
 .quick-booking {
-  position: sticky;
-  bottom: 0;
   z-index: 10;
   background: #f9fafc;
   color: #112039;
@@ -204,8 +184,6 @@
 }
 .quick-booking-inner {
   display: grid !important;
-  grid-template-columns: 1.2fr 1fr 1fr 190px;
-  gap: 18px;
   align-items: center;
 }
 
@@ -236,9 +214,6 @@
   }
   .film-title {
     font-size: 30px !important;
-  }
-  .quick-booking-inner {
-    grid-template-columns: 1fr 1fr 180px;
   }
 }
 @media (max-width: 600px) {
@@ -271,9 +246,6 @@
   .film-facts .film-field {
     margin: 0;
   }
-  .showtimes-section {
-    padding: 22px 16px;
-  }
   .section-heading-row h2 {
     font-size: 23px;
   }
@@ -283,17 +255,9 @@
   .section-heading-row > button {
     min-width: 85px;
   }
-  .screening-card-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
   .private-screening {
     flex-direction: column;
     align-items: flex-start;
-  }
-  .quick-booking-inner {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
   }
   .quick-booking-inner > button {
     grid-column: 1/-1;
@@ -307,9 +271,6 @@
   }
   .quick-booking .MuiSelect-select {
     font-size: 12px;
-  }
-  .date-button {
-    min-width: 75px !important;
   }
 }
 
@@ -363,37 +324,6 @@
   border: 1px solid #ffffff20;
   margin-top: 24px;
 }
-.screening-card-heading {
-  border-bottom: 1px solid #ffffff20;
-  padding-bottom: 22px;
-}
-.screening-card-heading h3 {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-.screening-day {
-  color: #aabbd3;
-  font-size: 14px !important;
-}
-.screening-type-row {
-  padding-top: 24px;
-  display: grid;
-  grid-template-columns: 190px 1fr;
-  gap: 24px;
-}
-.screening-type-label strong {
-  display: block;
-  font-size: 16px;
-  color: #fff;
-  margin-bottom: 8px;
-}
-.screening-type-label span {
-  display: block;
-  font-size: 12px;
-  line-height: 1.7;
-  color: #9eafc8;
-}
 .showtime-tile {
   display: flex !important;
   flex-direction: column;
@@ -437,10 +367,6 @@
 @media (max-width: 600px) {
   .screening-card {
     padding: 20px 16px;
-  }
-  .screening-type-row {
-    grid-template-columns: 1fr;
-    gap: 14px;
   }
   .date-button {
     min-width: 85px !important;

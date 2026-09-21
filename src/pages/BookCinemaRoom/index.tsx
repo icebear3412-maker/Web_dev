@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type React from 'react';
 import type { FormEvent } from 'react';
 import {
   Alert,
@@ -15,11 +16,10 @@ import CinemaLayout from '@/layouts/CinemaLayout';
 import { localDate } from '@/helpers/date';
 import { emptyForm, services, validateRental } from './data';
 import { cities, emptyRooms, roomTypesForCity } from '@/shared/cinemaRooms';
-import type { CinemaRoom } from '@/shared/cinemaRooms';
-import type { RentalForm } from './data';
+import type { RentalForm, IBookCinemaRoomProps, ISectionTitleProps } from '@/types/cinema';
 import './styles.css';
 
-function SectionTitle({ children }: { children: string }) {
+const SectionTitle: React.FC<ISectionTitleProps> = ({ children }) => {
   return (
     <div className="rental-section-title">
       <span />
@@ -27,8 +27,8 @@ function SectionTitle({ children }: { children: string }) {
       <span />
     </div>
   );
-}
-export default function BookCinemaRoom({ rooms = emptyRooms }: { rooms?: CinemaRoom[] }) {
+};
+const BookCinemaRoom: React.FC<IBookCinemaRoomProps> = ({ rooms = emptyRooms }) => {
   const [form, setForm] = useState<RentalForm>({ ...emptyForm });
   const [touched, setTouched] = useState<Partial<Record<keyof RentalForm, boolean>>>({});
   const [attempted, setAttempted] = useState(false);
@@ -283,4 +283,6 @@ export default function BookCinemaRoom({ rooms = emptyRooms }: { rooms?: CinemaR
       </Container>
     </CinemaLayout>
   );
-}
+};
+
+export default BookCinemaRoom;

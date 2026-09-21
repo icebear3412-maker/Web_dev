@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type React from 'react';
+import type { ICinemaLayoutProps } from '@/types/cinema';
 import {
   IconButton,
   Tooltip,
@@ -37,17 +38,12 @@ const themes = {
     shape: { borderRadius: 2 },
   }),
 };
-export default function CinemaLayout({
+const CinemaLayout: React.FC<ICinemaLayoutProps> = ({
   children,
   light = false,
   onLocate,
   locating = false,
-}: {
-  children: ReactNode;
-  light?: boolean;
-  onLocate?: () => void;
-  locating?: boolean;
-}) {
+}) => {
   return (
     <ThemeProvider theme={light ? themes.light : themes.dark}>
       <CssBaseline />
@@ -115,4 +111,6 @@ export default function CinemaLayout({
       </Box>
     </ThemeProvider>
   );
-}
+};
+
+export default CinemaLayout;

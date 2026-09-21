@@ -1,31 +1,4 @@
-import type { CinemaRoom } from '@/shared/cinemaRooms';
-export interface Movie {
-  id: string;
-  slug?: string;
-  title: string;
-  poster?: string;
-  director?: string;
-  cast?: string;
-  synopsis?: string;
-  duration?: string;
-  releaseDate?: string;
-  rating?: string;
-  genres?: string[];
-  trailerUrl?: string;
-}
-export interface Showtime {
-  id: string;
-  movie_id: string;
-  cinema_room_number: number;
-  show_date: string;
-  show_time: string;
-}
-// Frontend input shape, not an assumed backend endpoint or response contract.
-export interface FilmDetailData {
-  movies: Movie[];
-  rooms: CinemaRoom[];
-  showtimes: Showtime[];
-}
+import type { CinemaRoom, Showtime, FilmDetailData } from '@/types/cinema';
 // No fallback content: the backend integration must supply real records.
 export const emptyFilmData: FilmDetailData = {
   movies: [],

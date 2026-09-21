@@ -25,12 +25,13 @@ import LocalActivityOutlinedIcon from '@mui/icons-material/LocalActivityOutlined
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CinemaLayout from '@/layouts/CinemaLayout';
 import { emptyFilmData, getScreenings } from './data';
-import type { FilmDetailData } from './data';
+import type React from 'react';
+import type { IFilmDetailProps } from '@/types/cinema';
 import { cities } from '@/shared/cinemaRooms';
 import { localDate } from '@/helpers/date';
 import './styles.css';
 
-export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetailData }) {
+const FilmDetail: React.FC<IFilmDetailProps> = ({ data = emptyFilmData }) => {
   const { movies, rooms, showtimes } = data;
   const roomTypes = [...new Set(rooms.map((room) => room.type))].map((type) => ({
     id: type,
@@ -505,4 +506,6 @@ export default function FilmDetail({ data = emptyFilmData }: { data?: FilmDetail
       </Dialog>
     </CinemaLayout>
   );
-}
+};
+
+export default FilmDetail;
