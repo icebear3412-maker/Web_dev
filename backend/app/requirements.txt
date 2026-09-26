@@ -4,4 +4,7 @@ python-dotenv>=1.0.0
 psycopg2-binary>=2.9.9
 PyJWT>=2.8.0
 bcrypt>=4.1.0
-gunicorn>=21.2.0
+alembic>=1.14.0
+SQLAlchemy>=2.0.0
+gunicorn>=21.2.0; platform_system != "Windows"
+waitress>=3.0.0; platform_system == "Windows"
