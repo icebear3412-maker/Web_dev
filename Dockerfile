@@ -26,4 +26,4 @@ COPY --from=frontend-builder /app/frontend/dist ./dist
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--chdir", "backend", "run:server"]
+CMD ["sh", "-c", "alembic -c backend/alembic.ini upgrade head && exec gunicorn --bind 0.0.0.0:5000 --workers 2 --chdir backend run:server"]
