@@ -4,34 +4,31 @@ import { Autoplay } from 'swiper/modules';
 
 import 'swiper/css';
 
-interface Event {
-  title: string;
-  text: string;
-  image: string;
-}
+import curtan from '@/assets/curtan.jpg';
+import popcorn from '@/assets/popcorn.jpg';
+import seat from '@/assets/seat.jpg';
 
-const events: Event[] = [
+import type { ICardWithDescription } from '@/types';
+
+const Events: ICardWithDescription[] = [
   {
     title: 'WEEKEND MOVIE FEST',
     text: 'Ưu đãi cho hội bạn thân vào cuối tuần.',
-    image:
-      'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1000&q=85',
+    image: curtan,
   },
   {
     title: 'MEMBER SPECIAL',
     text: 'Đặc quyền dành riêng cho thành viên.',
-    image:
-      'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=1000&q=85',
+    image: seat,
   },
   {
     title: 'COMBO TIME',
     text: 'Bắp nước ngon hơn khi đi cùng phim hay.',
-    image:
-      'https://images.unsplash.com/photo-1585647347384-2593bc35786b?auto=format&fit=crop&w=1000&q=85',
+    image: popcorn,
   },
 ];
 
-function EventSection() {
+const EventSection: React.FC = () => {
   return (
     <section className="event-section">
       <Container maxWidth="lg">
@@ -47,19 +44,13 @@ function EventSection() {
             800: { slidesPerView: 2 },
           }}
         >
-          {events.map((event) => (
+          {Events.map((event) => (
             <SwiperSlide key={event.title}>
               <Card className="event-card">
-                <CardMedia
-                  component="img"
-                  image={event.image}
-                  alt={event.title}
-                />
+                <CardMedia component="img" image={event.image} alt={event.title} />
 
                 <Box className="event-overlay">
-                  <Typography className="event-title">
-                    {event.title}
-                  </Typography>
+                  <Typography className="event-title">{event.title}</Typography>
 
                   <Typography>{event.text}</Typography>
                 </Box>
@@ -70,6 +61,6 @@ function EventSection() {
       </Container>
     </section>
   );
-}
+};
 
 export default EventSection;

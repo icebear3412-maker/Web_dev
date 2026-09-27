@@ -8,4 +8,22 @@ interface IRoute {
   layout: React.FC<IDefaultReactProps> | null;
 }
 
-export type { IDefaultReactProps, IRoute };
+interface ICardWithLink {
+  image: string;
+  linkTo: string;
+}
+
+interface ICardWithDescription {
+  title: string;
+  text: string;
+  image: string;
+}
+
+interface IMovieCard {
+  title: string;
+  age: number;
+  image: string;
+  linkTo: string;
+}
+
+export type { IDefaultReactProps, IRoute, ICardWithLink, ICardWithDescription, IMovieCard };

@@ -1,30 +1,67 @@
-import { Box, Button, Container } from '@mui/material';
+import type { ICardWithLink } from '@/types';
+import { Box, Divider, Stack } from '@mui/material';
+import type React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function NavigationBar() {
+const navItems: ICardWithLink[] = [
+  { image: '/icons/cinemas.png', linkTo: '/cinemas' },
+  { image: '/icons/now-showing.png', linkTo: '/now-showing' },
+  { image: '/icons/special.png', linkTo: '/special' },
+  { image: '/icons/hall-rental.png', linkTo: '/hall-rental' },
+  { image: '/icons/contact.png', linkTo: '/contact' },
+  { image: '/icons/news-offers.png', linkTo: '/news-offers' },
+  { image: '/icons/register.png', linkTo: '/register' },
+];
+
+const NavigationBar: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <Box
       sx={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e0e0e0',
+        borderTop: '1px solid',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        py: 2,
+        overflowX: { xs: 'auto', md: 'visible' },
       }}
     >
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 4,
-            py: 1,
-          }}
-        >
-          <Button color="inherit">MOVIES</Button>
-          <Button color="inherit">CINEMAS</Button>
-          <Button color="inherit">PROMOTIONS</Button>
-          <Button color="inherit">MEMBERSHIP</Button>
-        </Box>
-      </Container>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="center"
+        divider={<Divider orientation="vertical" flexItem sx={{ mx: { xs: 1, md: 2 } }} />}
+        sx={{ minWidth: 'fit-content', px: 2 }}
+      >
+        {navItems.map((item) => (
+          <Box
+            key={item.linkTo}
+            onClick={() => navigate(item.linkTo)}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              flexShrink: 0,
+              width: { xs: 100, md: 130 },
+              cursor: 'pointer',
+            }}
+          >
+            <Box
+              component="img"
+              src={item.image}
+              alt={item.linkTo}
+              sx={{
+                width: 56,
+                height: 56,
+                objectFit: 'contain',
+                transition: 'transform 0.2s ease-out',
+              }}
+            />
+          </Box>
+        ))}
+      </Stack>
     </Box>
   );
-}
+};
 
 export default NavigationBar;

@@ -1,30 +1,21 @@
 import React from 'react';
 
-import Header from './header';
-import QuickLinks from './common';
-import HeroSection from './hero';
-import MovieSection from './movie';
-import EventSection from './event';
-import CinemaRoomBanner from './cinema';
-import Partners from './partner';
-import Footer from './footer';
+import QuickLinks from '@/pages/Landing/QuickLink';
+import HeroSection from '@/pages/Landing/Carousel';
+import MovieSection from '@/pages/Landing/Movie';
+import EventSection from '@/pages/Landing/Event';
+import CinemaRoomBanner from '@/pages/Landing/NewOfferBanner';
+import PartnerLine from '@/pages/Landing/Partner';
 
 const FrontPage: React.FC = () => {
   return (
     <div className="cgv-page">
-      <Header />
-
       <QuickLinks />
-
-      <main>
-        <HeroSection />
-        <MovieSection />
-        <EventSection />
-        <CinemaRoomBanner />
-        <Partners />
-      </main>
-
-      <Footer />
+      <HeroSection />
+      <MovieSection />
+      <EventSection />
+      <CinemaRoomBanner />
+      <PartnerLine />
     </div>
   );
 };
