@@ -1,3 +1,4 @@
+import type { SvgIconComponent } from '@mui/icons-material';
 interface IDefaultReactProps {
   children: React.ReactNode;
 }
