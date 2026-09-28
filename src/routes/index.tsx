@@ -12,7 +12,7 @@ const publicRoutes: IRoute[] = [
     layout: DefaultLayout,
   },
   {
-    path: '/booking/:showtimeId',
+    path: '/booking',
     component: BookingPage,
     layout: DefaultLayout,
   },
