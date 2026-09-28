@@ -10,7 +10,7 @@ from sqlalchemy import engine_from_config, pool
 config = context.config
 
 #Use the same private configuration as the Flask application.
-ROOT_DIR = Path(__file__).resolve().parents[2]
+ROOT_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT_DIR / ".env")
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
