@@ -49,9 +49,7 @@ const BookingPage: React.FC = () => {
     }
 
     setSelectedSeats((previous) =>
-      previous.includes(seat)
-        ? previous.filter((item) => item !== seat)
-        : [...previous, seat],
+      previous.includes(seat) ? previous.filter((item) => item !== seat) : [...previous, seat],
     );
   };
 
@@ -67,9 +65,7 @@ const BookingPage: React.FC = () => {
         Phim: Phim mẫu
       </Typography>
 
-      <Typography sx={{ mb: 4 }}>
-        Suất chiếu: 19:00 - 19 tháng 9 năm 2026
-      </Typography>
+      <Typography sx={{ mb: 4 }}>Suất chiếu: 19:00 - 19 tháng 9 năm 2026</Typography>
 
       <Box
         sx={{
@@ -112,19 +108,14 @@ const BookingPage: React.FC = () => {
       </Box>
 
       <Box sx={{ mt: 4 }}>
-        <Typography>
-          Ghế có thể chọn: Bấm vào ghế để chọn
-        </Typography>
+        <Typography>Ghế có thể chọn: Bấm vào ghế để chọn</Typography>
 
-        <Typography sx={{ mt: 1 }}>
-          Ghế đã được đặt: A3, A4, B6, C2
-        </Typography>
+        <Typography sx={{ mt: 1 }}>Ghế đã được đặt: A3, A4, B6, C2</Typography>
       </Box>
 
       <Box sx={{ mt: 5 }}>
         <Typography>
-          Ghế đã chọn:{' '}
-          {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'Chưa chọn'}
+          Ghế đã chọn: {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'Chưa chọn'}
         </Typography>
 
         <Typography variant="h6" sx={{ mt: 2 }}>
