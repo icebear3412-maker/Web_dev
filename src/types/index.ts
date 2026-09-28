@@ -8,4 +8,10 @@ interface IRoute {
   layout: React.FC<IDefaultReactProps> | null;
 }
 
-export type { IDefaultReactProps, IRoute };
+interface IRoomDetailResPayload {
+  occupiedSeat: string[],
+  size: [number, number],
+  price: number,
+}
+
+export type { IDefaultReactProps, IRoute, IRoomDetailResPayload };
