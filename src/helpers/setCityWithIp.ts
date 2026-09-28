@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const getCityFromIp = async () => {
+const setCityWithIp = async () => {
+  const city = localStorage.getItem('city');
+  if (city !== undefined) return;
   try {
     const response = await axios.get("https://ipwho.is/");
 
@@ -8,10 +10,10 @@ const getCityFromIp = async () => {
 
     const { city } = response.data;
 
-    return city;
+    localStorage.setItem('city', city)
   } catch (error) {
     console.error(error);
   }
 };
 
-export default getCityFromIp;
+export default setCityWithIp;
