@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Button, Container, Typography } from '@mui/material';
 
 const seats = [
@@ -40,7 +40,7 @@ const bookedSeats = ['A3', 'A4', 'B6', 'C2'];
 
 const seatPrice = 100000;
 
-const BookingPage = () => {
+const BookingPage: React.FC = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
   const toggleSeat = (seat: string) => {

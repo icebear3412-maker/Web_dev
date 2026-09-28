@@ -14,4 +14,26 @@ interface IRoomDetailResPayload {
   price: number,
 }
 
-export type { IDefaultReactProps, IRoute, IRoomDetailResPayload };
+interface IMovieShowday {
+  date: number[],
+}
+
+interface IMovieShowTime {
+  time: number[],
+}
+
+interface IMovieInfoPayload {
+  image: string,
+  name: string,
+  time: number,
+  director: string,
+  genre: string,
+  actor: string,
+  releaseDate: string,
+  rating: number,
+  subtitle: string,
+  description: string,
+  trailerLink: string,
+}
+
+export type { IDefaultReactProps, IRoute, IRoomDetailResPayload, IMovieInfoPayload, IMovieShowTime, IMovieShowday};
