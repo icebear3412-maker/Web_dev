@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Add,
   CalendarMonth,
@@ -38,9 +38,9 @@ interface MovieItem {
   id: number;
   title: string;
   genre: string;
+  image: string;
   duration: number;
   releaseDate: string;
-  poster: string;
   status: 'Showing' | 'Hidden';
   screenings: Screening[];
 }
@@ -52,7 +52,7 @@ const initialMovies: MovieItem[] = [
     genre: 'Sci-Fi',
     duration: 166,
     releaseDate: '2026-09-10',
-    poster: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+    image: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
     status: 'Showing',
     screenings: [
       { time: '10:00', room: 'Room 1' },
@@ -66,7 +66,7 @@ const initialMovies: MovieItem[] = [
     genre: 'Adventure',
     duration: 125,
     releaseDate: '2026-09-12',
-    poster: 'https://image.tmdb.org/t/p/w500/ygGmAO60t8GyqLGSZS6Qh2lH8kU.jpg',
+    image: 'https://image.tmdb.org/t/p/w500/ygGmAO60t8GyqLGSZS6Qh2lH8kU.jpg',
     status: 'Showing',
     screenings: [
       { time: '11:30', room: 'Room 3' },
@@ -79,7 +79,7 @@ const initialMovies: MovieItem[] = [
     genre: 'Action',
     duration: 176,
     releaseDate: '2026-08-20',
-    poster: 'https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg',
+    image: 'https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg',
     status: 'Hidden',
     screenings: [],
   },
@@ -95,7 +95,17 @@ const emptyMovie: Omit<MovieItem, 'id' | 'status'> = {
 };
 
 const MovieListPage = () => {
-  const [movies, setMovies] = useState<MovieItem[]>(initialMovies);
+  const [movies, setMovies] = useState<MovieItem[]>([]);
+  React.useEffect(() => {
+  fetch('/movies')
+    .then((response) => response.json())
+    .then((data) => {
+      setMovies(data);
+    })
+    .catch((error) => {
+      console.error('Failed to fetch movies:', error);
+    });
+}, []);
   const [editingMovie, setEditingMovie] = useState<MovieItem | null>(null);
   const [addingMovie, setAddingMovie] = useState(false);
   const [newMovie, setNewMovie] = useState(emptyMovie);
@@ -191,46 +201,7 @@ const MovieListPage = () => {
                     alignItems: { xs: 'stretch', lg: 'center' },
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 72,
-                      height: 100,
-                      borderRadius: 1.5,
-                      overflow: 'hidden',
-                      bgcolor: 'grey.100',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {movie.poster ? (
-                      <Box
-                        component="img"
-                        src={movie.poster}
-                        alt={movie.title}
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block',
-                        }}
-                        onError={(event) => {
-                          event.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          display: 'grid',
-                          placeItems: 'center',
-                        }}
-                      >
-                        <Movie color="action" />
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Box sx={{ flex: 1, minWidth: 180 }}>
+                                    <Box sx={{ flex: 1, minWidth: 180 }}>
                     <Stack
                       direction="row"
                       gap={1}
@@ -239,17 +210,39 @@ const MovieListPage = () => {
                         flexWrap: 'wrap',
                       }}
                     >
-                      <Typography variant="h6" fontWeight={700}>
-                        {movie.title}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={movie.status}
-                        color={movie.status === 'Showing' ? 'success' : 'default'}
+                      <Box
+                        component="img"
+                        src={movie.image}
+                        alt={movie.title}
+                        sx={{
+                          width: 100,
+                          height: 140,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          mr: 2,
+                        }}
                       />
+
+                      <Box>
+                        <Typography variant="h6">
+                          {movie.title}
+                        </Typography>
+
+                        <Chip
+                          size="small"
+                          label={movie.status}
+                          color={
+                            movie.status === 'Showing'
+                              ? 'success'
+                              : 'default'
+                          }
+                        />
+                      </Box>
                     </Stack>
+
                     <Typography color="text.secondary" mt={0.5}>
-                      {movie.genre} · {movie.duration} min · Release {movie.releaseDate || '—'}
+                      {movie.genre} · {movie.duration} min · Release{' '}
+                      {movie.releaseDate || '—'}
                     </Typography>
                   </Box>
 
