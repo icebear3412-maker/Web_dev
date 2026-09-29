@@ -6,6 +6,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import type { IMovieCard } from '@/types';
 import { useNavigate } from 'react-router-dom';
+import { sectionHeadingSx, sectionSx, sectionTitleSx } from '@/theme';
 
 const Movies: IMovieCard[] = [
   {
@@ -45,14 +46,14 @@ const Movies: IMovieCard[] = [
   },
 ];
 
-const MovieSection: React.FC = () => {
+const Movie: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <section className="content-section">
+    <Box component="section" sx={sectionSx}>
       <Container maxWidth="lg">
-        <Box className="section-heading">
-          <Typography className="section-title">PHIM ĐANG CHIẾU</Typography>
-          <Button className="see-all">XEM TẤT CẢ →</Button>
+        <Box sx={sectionHeadingSx}>
+          <Typography sx={sectionTitleSx}>PHIM ĐANG CHIẾU</Typography>
+          <Button sx={{ color: 'primary.main' }}>XEM TẤT CẢ →</Button>
         </Box>
 
         <Swiper
@@ -69,27 +70,64 @@ const MovieSection: React.FC = () => {
         >
           {Movies.map((movie) => (
             <SwiperSlide key={movie.title}>
-              <Card className="movie-card">
+              <Card sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
                 <Box
-                  className="movie-poster"
                   sx={{
+                    position: 'relative',
+                    aspectRatio: '2 / 3',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     backgroundImage: `url(${movie.image})`,
+                    '& .MuiButton-root': {
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease-out',
+                      '@media (hover: none)': { opacity: 1 },
+                    },
+                    '&:hover .MuiButton-root, &:focus-within .MuiButton-root': { opacity: 1 },
                   }}
                 >
-                  <span className="age-badge">{movie.age}</span>
-                  <Button className="movie-book-button" onClick={() => navigate(movie.linkTo)}>
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
+                      bgcolor: 'primary.main',
+                      color: 'common.white',
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {movie.age}
+                  </Box>
+
+                  <Button
+                    variant="contained"
+                    onClick={() => movie.linkTo && navigate(movie.linkTo)}
+                    sx={{
+                      position: 'absolute',
+                      bottom: 12,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                    }}
+                  >
                     MUA VÉ
                   </Button>
                 </Box>
 
-                <Typography className="movie-title">{movie.title}</Typography>
+                <Typography sx={{ mt: 1, fontWeight: 700 }}>{movie.title}</Typography>
               </Card>
             </SwiperSlide>
           ))}
         </Swiper>
       </Container>
-    </section>
+    </Box>
   );
 };
 
-export default MovieSection;
+export default Movie;

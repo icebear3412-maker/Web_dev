@@ -28,10 +28,8 @@ const NavigationBar: React.FC = () => {
     >
       <Stack
         direction="row"
-        alignItems="center"
-        justifyContent="center"
         divider={<Divider orientation="vertical" flexItem sx={{ mx: { xs: 1, md: 2 } }} />}
-        sx={{ minWidth: 'fit-content', px: 2 }}
+        sx={{ alignItems: 'center', justifyContent: 'center', minWidth: 'fit-content', px: 2 }}
       >
         {navItems.map((item) => (
           <Box

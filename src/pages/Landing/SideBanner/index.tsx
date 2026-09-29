@@ -1,16 +1,21 @@
-import { Box } from '@mui/material';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import type React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface SideBanner {
+  label: string;
   image: string;
   linkTo: string;
 }
 
 const sideBanners: SideBanner[] = [
-  { image: '', linkTo: '/promo-a' },
-  { image: '', linkTo: '/promo-b' },
+  { label: 'Promotion A', image: '', linkTo: '/promo-a' },
+  { label: 'Promotion B', image: '', linkTo: '/promo-b' },
 ];
+
+const BANNER_WIDTH = 120;
+const BANNER_OFFSET = 16;
+const MIN_VIEWPORT = 1536 + 2 * (BANNER_WIDTH + BANNER_OFFSET);
 
 const SideBanners: React.FC = () => {
   const navigate = useNavigate();
@@ -18,28 +23,47 @@ const SideBanners: React.FC = () => {
   return (
     <>
       {sideBanners.map((banner, index) => (
-        <Box
+        <ButtonBase
           key={banner.linkTo}
+          aria-label={banner.label}
           onClick={() => navigate(banner.linkTo)}
           sx={{
             position: 'fixed',
             top: '50%',
             transform: 'translateY(-50%)',
-            [index === 0 ? 'left' : 'right']: 16,
-            width: 120,
+            [index === 0 ? 'left' : 'right']: BANNER_OFFSET,
+            width: BANNER_WIDTH,
             zIndex: 999,
-            cursor: 'pointer',
-            display: { xs: 'none', lg: 'block' },
+            display: 'none',
+            [`@media (min-width: ${MIN_VIEWPORT}px)`]: { display: 'block' },
+            borderRadius: 2,
             '&:hover': { opacity: 0.9 },
           }}
         >
-          <Box
-            component="img"
-            src={banner.image}
-            alt=""
-            sx={{ width: '100%', borderRadius: 2, boxShadow: 3 }}
-          />
-        </Box>
+          {banner.image ? (
+            <Box
+              component="img"
+              src={banner.image}
+              alt=""
+              sx={{ display: 'block', width: '100%', borderRadius: 2, boxShadow: 3 }}
+            />
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                placeItems: 'center',
+                height: 400,
+                border: '1px dashed',
+                borderColor: 'divider',
+                borderRadius: 2,
+                bgcolor: 'background.paper',
+                boxShadow: 3,
+              }}
+            >
+              <Typography variant="caption">{banner.label}</Typography>
+            </Box>
+          )}
+        </ButtonBase>
       ))}
     </>
   );

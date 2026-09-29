@@ -6,29 +6,37 @@ import gift from '@/assets/newOffer/gift.jpg';
 import fanc from '@/assets/newOffer/fanc.jpg';
 import rent from '@/assets/newOffer/rent.jpg';
 import { useNavigate } from 'react-router-dom';
+import { clickableSx } from '@/theme';
 
 const NewOffers: ICardWithLink[] = [
-  {
-    image: gift,
-    linkTo: '',
-  },
-  {
-    image: fanc,
-    linkTo: '',
-  },
-  {
-    image: rent,
-    linkTo: '',
-  },
+  { image: gift, linkTo: '' },
+  { image: fanc, linkTo: '' },
+  { image: rent, linkTo: '' },
 ];
 
 const NewOfferBanner: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <Box>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+        gap: 2,
+        py: { xs: 2, md: 3 },
+      }}
+    >
       {NewOffers.map((offer) => (
-        <Box onClick={() => navigate(offer.linkTo)}>
-          <img src={offer.image} />
+        <Box
+          key={offer.image}
+          onClick={() => offer.linkTo && navigate(offer.linkTo)}
+          sx={clickableSx}
+        >
+          <Box
+            component="img"
+            src={offer.image}
+            alt=""
+            sx={{ display: 'block', width: '100%', borderRadius: 2 }}
+          />
         </Box>
       ))}
     </Box>

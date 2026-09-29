@@ -9,6 +9,12 @@ interface IRoute {
   layout: React.FC<IDefaultReactProps> | null;
 }
 
+interface IButtonWithIconAndDisplayText {
+  display: string,
+  link: string,
+  icon: SvgIconComponent,
+} 
+
 interface ICardWithLink {
   image: string;
   linkTo: string;
@@ -27,4 +33,4 @@ interface IMovieCard {
   linkTo: string;
 }
 
-export type { IDefaultReactProps, IRoute, ICardWithLink, ICardWithDescription, IMovieCard };
+export type { IDefaultReactProps, IRoute, ICardWithLink, ICardWithDescription, IMovieCard, IButtonWithIconAndDisplayText };

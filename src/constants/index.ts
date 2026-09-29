@@ -1,3 +1,3 @@
-const MAX_WIDTH = 980
+const MAX_WIDTH = 980;
 
-export {MAX_WIDTH}
+export { MAX_WIDTH };
