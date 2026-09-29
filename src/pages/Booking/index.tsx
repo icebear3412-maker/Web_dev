@@ -1,1090 +1,689 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
-  Grid,
   Typography,
 } from '@mui/material';
 
 const API_URL = 'http://localhost:5000';
 
-/*
- * Backend response types
- */
+/* =========================
+   TYPES
+========================= */
 
-interface MovieResponse {
-  movie: {
-    id?: string;
-    title?: string;
-    title_vn?: string;
-    duration?: number;
-    director?: string;
-    genre?: string;
-    cast?: string;
-    release_date?: string;
-    rating?: number;
-    language?: string;
-    synopsis?: string;
-    poster?: string;
-    trailer_url?: string;
-    base_price?: number;
-  };
+interface Movie {
+  id?: string;
+  title?: string;
+  title_vn?: string;
+  director?: string;
+  genre?: string;
+  cast?: string;
+  release_date?: string;
+  duration?: number;
+  rating?: number;
+  synopsis?: string;
+  poster?: string;
+  base_price?: number;
 }
 
 interface Showtime {
   id: string;
-  movie_id: string;
-  cinema_room_number: number;
   show_date: string;
   show_time: string;
-  format?: string | null;
-  movie_title?: string;
-  title_vn?: string;
-  poster?: string;
+  cinema_room_number: number;
   base_price?: number;
-  cinema_room_id?: string;
-  cinema_room_name?: string;
-  room_type?: string;
-}
-
-interface ShowtimesResponse {
-  showtimes: Showtime[];
 }
 
 interface Seat {
   id: string;
   seat_code: string;
-  row_label?: string;
-  seat_number?: number;
-  seat_type?: string;
+  row_label: string;
   booked: boolean;
 }
 
-interface SeatsResponse {
-  showtime_id: string;
-  seats: Seat[];
-}
+/* =========================
+   MOCK DATA
+========================= */
 
-/*
- * Mock movie.
- * Used when backend movie API is unavailable.
- */
-
-const mockMovie = {
-  id: 'movie-demo',
-  title: 'Phim mẫu',
+const mockMovie: Movie = {
+  id: '1',
   title_vn: 'Phim mẫu',
-  duration: 120,
   director: 'Đạo diễn mẫu',
   genre: 'Action, Adventure',
   cast: 'Diễn viên mẫu',
-  release_date: '2026-09-19',
+  duration: 120,
   rating: 8.5,
-  language: 'Tiếng Việt',
-  synopsis:
-    'Đây là thông tin mô tả mẫu của bộ phim. Dữ liệu này được sử dụng khi backend chưa có dữ liệu phim.',
-  poster: '',
-  trailer_url: '',
+  release_date: '2026-09-19',
+  synopsis: 'Đây là mô tả mẫu của bộ phim.',
   base_price: 100000,
 };
 
-/*
- * Mock showtimes.
- */
-
 const mockShowtimes: Showtime[] = [
   {
-    id: 'mock-showtime-1',
-    movie_id: 'movie-demo',
-    cinema_room_number: 1,
+    id: '1',
     show_date: '2026-09-19',
     show_time: '10:00',
-    format: '2D',
-    movie_title: 'Phim mẫu',
-    title_vn: 'Phim mẫu',
+    cinema_room_number: 1,
     base_price: 100000,
-    cinema_room_name: 'Phòng 1',
-    room_type: '2D',
   },
   {
-    id: 'mock-showtime-2',
-    movie_id: 'movie-demo',
-    cinema_room_number: 1,
+    id: '2',
     show_date: '2026-09-19',
     show_time: '13:00',
-    format: '2D',
-    movie_title: 'Phim mẫu',
-    title_vn: 'Phim mẫu',
+    cinema_room_number: 1,
     base_price: 100000,
-    cinema_room_name: 'Phòng 1',
-    room_type: '2D',
   },
   {
-    id: 'mock-showtime-3',
-    movie_id: 'movie-demo',
-    cinema_room_number: 1,
+    id: '3',
     show_date: '2026-09-19',
     show_time: '19:00',
-    format: '2D',
-    movie_title: 'Phim mẫu',
-    title_vn: 'Phim mẫu',
+    cinema_room_number: 1,
     base_price: 100000,
-    cinema_room_name: 'Phòng 1',
-    room_type: '2D',
   },
 ];
 
-/*
- * Mock seats.
- */
-
 const mockSeats: Seat[] = [
-  ...Array.from({ length: 4 }, (_, rowIndex) =>
-    Array.from({ length: 8 }, (_, seatIndex) => {
-      const row = String.fromCharCode(65 + rowIndex);
-      const number = seatIndex + 1;
+  { id: 'A1', seat_code: 'A1', row_label: 'A', booked: false },
+  { id: 'A2', seat_code: 'A2', row_label: 'A', booked: false },
+  { id: 'A3', seat_code: 'A3', row_label: 'A', booked: true },
+  { id: 'A4', seat_code: 'A4', row_label: 'A', booked: true },
+  { id: 'A5', seat_code: 'A5', row_label: 'A', booked: false },
+  { id: 'A6', seat_code: 'A6', row_label: 'A', booked: false },
 
-      return {
-        id: `${row}${number}`,
-        seat_code: `${row}${number}`,
-        row_label: row,
-        seat_number: number,
-        seat_type: 'standard',
-        booked:
-          `${row}${number}` === 'A3' ||
-          `${row}${number}` === 'A4' ||
-          `${row}${number}` === 'B6' ||
-          `${row}${number}` === 'C2',
-      };
-    }),
-  ).flat(),
+  { id: 'B1', seat_code: 'B1', row_label: 'B', booked: false },
+  { id: 'B2', seat_code: 'B2', row_label: 'B', booked: false },
+  { id: 'B3', seat_code: 'B3', row_label: 'B', booked: false },
+  { id: 'B4', seat_code: 'B4', row_label: 'B', booked: false },
+  { id: 'B5', seat_code: 'B5', row_label: 'B', booked: false },
+  { id: 'B6', seat_code: 'B6', row_label: 'B', booked: true },
+
+  { id: 'C1', seat_code: 'C1', row_label: 'C', booked: false },
+  { id: 'C2', seat_code: 'C2', row_label: 'C', booked: true },
+  { id: 'C3', seat_code: 'C3', row_label: 'C', booked: false },
+  { id: 'C4', seat_code: 'C4', row_label: 'C', booked: false },
+  { id: 'C5', seat_code: 'C5', row_label: 'C', booked: false },
+  { id: 'C6', seat_code: 'C6', row_label: 'C', booked: false },
 ];
 
-/*
- * Helpers
- */
-
-const formatPrice = (price: number) =>
-  price.toLocaleString('vi-VN') + ' VNĐ';
-
-const formatDate = (date: string) => {
-  const parsedDate = new Date(`${date}T00:00:00`);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return date;
-  }
-
-  return parsedDate.toLocaleDateString('vi-VN', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
+/* =========================
+   BOOKING PAGE
+========================= */
 
 const BookingPage: React.FC = () => {
-  /*
-   * Get movieId from:
-   *
-   * /booking?movieId=123
-   */
+  /* Get movieId from URL */
 
-  const params = useMemo(
-    () => new URLSearchParams(window.location.search),
-    [],
-  );
+  const movieId = new URLSearchParams(
+    window.location.search,
+  ).get('movieId');
 
-  const movieId = params.get('movieId');
+  /* Movie */
 
-  /*
-   * Movie
-   */
+  const [movie, setMovie] = useState<Movie>(mockMovie);
 
-  const [movie, setMovie] = useState<MovieResponse['movie'] | null>(null);
-  const [movieLoading, setMovieLoading] = useState(true);
+  /* Dialogs */
 
-  /*
-   * Popup states
-   */
+  const [movieOpen, setMovieOpen] = useState(true);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [showtimeOpen, setShowtimeOpen] = useState(false);
+  const [seatOpen, setSeatOpen] = useState(false);
 
-  const [movieDialogOpen, setMovieDialogOpen] = useState(true);
-  const [showdayDialogOpen, setShowdayDialogOpen] = useState(false);
-  const [showtimeDialogOpen, setShowtimeDialogOpen] = useState(false);
-  const [seatDialogOpen, setSeatDialogOpen] = useState(false);
+  /* Booking data */
 
-  /*
-   * Showtime
-   */
+  const [showtimes, setShowtimes] =
+    useState<Showtime[]>([]);
 
-  const [showtimes, setShowtimes] = useState<Showtime[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] =
+    useState('');
+
   const [selectedShowtime, setSelectedShowtime] =
     useState<Showtime | null>(null);
 
-  /*
-   * Seats
-   */
-
   const [seats, setSeats] = useState<Seat[]>([]);
-  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  const [seatLoading, setSeatLoading] = useState(false);
 
-  /*
-   * General states
-   */
+  const [selectedSeats, setSelectedSeats] =
+    useState<string[]>([]);
 
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  /*
-   * Load movie
-   */
+  /* =========================
+     GET MOVIE
+  ========================= */
 
   useEffect(() => {
-    const loadMovie = async () => {
-      setMovieLoading(true);
-
-      if (!movieId) {
-        setMovie(mockMovie);
-        setMovieLoading(false);
-        return;
-      }
+    const getMovie = async () => {
+      if (!movieId) return;
 
       try {
-        const response = await fetch(`${API_URL}/movies/${movieId}`);
+        const response = await fetch(
+          `${API_URL}/movies/${movieId}`,
+        );
 
         if (!response.ok) {
-          throw new Error('Movie API failed');
+          throw new Error();
         }
 
-        const data: MovieResponse = await response.json();
+        const data = await response.json();
 
         setMovie(data.movie);
       } catch {
-        /*
-         * Backend unavailable:
-         * use mock movie.
-         */
-
-        setMovie({
-          ...mockMovie,
-          id: movieId,
-        });
-      } finally {
-        setMovieLoading(false);
+        setMovie(mockMovie);
       }
     };
 
-    void loadMovie();
+    getMovie();
   }, [movieId]);
 
-  /*
-   * Get all available show days.
-   *
-   * We first get showtimes without date.
-   * Then group them by show_date.
-   */
+  /* =========================
+     GET SHOW DAYS
+  ========================= */
 
-  const loadShowdays = async () => {
-    setLoading(true);
-    setMessage('');
-
+  const openDates = async () => {
     try {
-      if (!movieId) {
-        setShowtimes(mockShowtimes);
-        setShowdayDialogOpen(true);
-        return;
-      }
-
       const response = await fetch(
-        `${API_URL}/bookings/showtimes?movie_id=${encodeURIComponent(movieId)}`,
+        `${API_URL}/bookings/showtimes?movie_id=${movieId}`,
       );
 
       if (!response.ok) {
-        throw new Error('Showtime API failed');
+        throw new Error();
       }
 
-      const data: ShowtimesResponse = await response.json();
+      const data = await response.json();
 
       setShowtimes(data.showtimes);
-
-      if (data.showtimes.length === 0) {
-        setShowtimes(mockShowtimes);
-      }
-
-      setShowdayDialogOpen(true);
     } catch {
       setShowtimes(mockShowtimes);
-      setShowdayDialogOpen(true);
-    } finally {
-      setLoading(false);
     }
+
+    setMovieOpen(false);
+    setDateOpen(true);
   };
 
-  /*
-   * Unique show days.
-   */
-
-  const showDays = useMemo(() => {
-    const dates = showtimes.map((showtime) => showtime.show_date);
-
-    return [...new Set(dates)].sort();
-  }, [showtimes]);
-
-  /*
-   * Select a day.
-   */
+  /* =========================
+     SELECT DATE
+  ========================= */
 
   const selectDate = async (date: string) => {
     setSelectedDate(date);
-    setShowdayDialogOpen(false);
-
-    setLoading(true);
 
     try {
-      if (!movieId) {
-        setShowtimeDialogOpen(true);
-        return;
-      }
-
       const response = await fetch(
-        `${API_URL}/bookings/showtimes?movie_id=${encodeURIComponent(
-          movieId,
-        )}&date=${encodeURIComponent(date)}`,
+        `${API_URL}/bookings/showtimes?movie_id=${movieId}&date=${date}`,
       );
 
       if (!response.ok) {
-        throw new Error('Showtime API failed');
+        throw new Error();
       }
 
-      const data: ShowtimesResponse = await response.json();
+      const data = await response.json();
 
-      if (data.showtimes.length > 0) {
-        setShowtimes(data.showtimes);
-      }
-
-      setShowtimeDialogOpen(true);
+      setShowtimes(data.showtimes);
     } catch {
-      setShowtimeDialogOpen(true);
-    } finally {
-      setLoading(false);
+      setShowtimes(
+        mockShowtimes.filter(
+          (showtime) => showtime.show_date === date,
+        ),
+      );
     }
+
+    setDateOpen(false);
+    setShowtimeOpen(true);
   };
 
-  /*
-   * Select showtime.
-   * Then get seats.
-   */
+  /* =========================
+     SELECT SHOWTIME
+  ========================= */
 
   const selectShowtime = async (showtime: Showtime) => {
     setSelectedShowtime(showtime);
-    setShowtimeDialogOpen(false);
-    setSeatDialogOpen(true);
-    setSeatLoading(true);
     setSelectedSeats([]);
 
     try {
       const response = await fetch(
-        `${API_URL}/bookings/showtimes/${encodeURIComponent(showtime.id)}/seats`,
+        `${API_URL}/bookings/showtimes/${showtime.id}/seats`,
       );
 
       if (!response.ok) {
-        throw new Error('Seats API failed');
+        throw new Error();
       }
 
-      const data: SeatsResponse = await response.json();
+      const data = await response.json();
 
       setSeats(data.seats);
     } catch {
       setSeats(mockSeats);
-    } finally {
-      setSeatLoading(false);
     }
+
+    setShowtimeOpen(false);
+    setSeatOpen(true);
   };
 
-  /*
-   * Toggle seat.
-   */
+  /* =========================
+     SELECT / UNSELECT SEAT
+  ========================= */
 
   const toggleSeat = (seat: Seat) => {
-    if (seat.booked) {
-      return;
-    }
+    if (seat.booked) return;
 
-    setSelectedSeats((previous) =>
-      previous.includes(seat.id)
-        ? previous.filter((id) => id !== seat.id)
-        : [...previous, seat.id],
-    );
+    if (selectedSeats.includes(seat.id)) {
+      setSelectedSeats(
+        selectedSeats.filter(
+          (id) => id !== seat.id,
+        ),
+      );
+    } else {
+      setSelectedSeats([
+        ...selectedSeats,
+        seat.id,
+      ]);
+    }
   };
 
-  /*
-   * Selected seat objects.
-   */
+  /* =========================
+     TOTAL PRICE
+  ========================= */
 
-  const selectedSeatObjects = useMemo(
-    () => seats.filter((seat) => selectedSeats.includes(seat.id)),
-    [seats, selectedSeats],
-  );
-
-  /*
-   * Price.
-   */
-
-  const seatPrice =
+  const price =
     selectedShowtime?.base_price ??
-    movie?.base_price ??
-    mockMovie.base_price ??
+    movie.base_price ??
     100000;
 
-  const totalPrice = selectedSeats.length * seatPrice;
+  const total = selectedSeats.length * price;
 
-  /*
-   * Group seats by row.
-   */
+  /* =========================
+     BOOK
+  ========================= */
 
-  const seatRows = useMemo(() => {
-    const rows: Record<string, Seat[]> = {};
+  const bookTickets = async () => {
+    if (!selectedShowtime) return;
 
-    seats.forEach((seat) => {
-      const row = seat.row_label || seat.seat_code.charAt(0);
-
-      if (!rows[row]) {
-        rows[row] = [];
-      }
-
-      rows[row].push(seat);
-    });
-
-    return Object.entries(rows).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
-  }, [seats]);
-
-  /*
-   * Book tickets.
-   */
-
-  const confirmBooking = async () => {
-    if (!selectedShowtime || selectedSeats.length === 0) {
+    if (selectedSeats.length === 0) {
+      setMessage('Vui lòng chọn ít nhất một ghế.');
       return;
     }
 
-    setLoading(true);
-    setMessage('');
+    const token =
+      localStorage.getItem('token') ||
+      localStorage.getItem('access_token');
+
+    if (!token) {
+      setMessage('Vui lòng đăng nhập trước.');
+      return;
+    }
 
     try {
-      /*
-       * The backend requires an authenticated user.
-       *
-       * Change this key if the signin implementation
-       * in the project stores the JWT under another key.
-       */
+      const response = await fetch(
+        `${API_URL}/bookings`,
+        {
+          method: 'POST',
 
-      const token =
-        localStorage.getItem('token') ||
-        localStorage.getItem('access_token');
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
 
-      if (!token) {
-        setMessage('Bạn cần đăng nhập trước khi đặt vé.');
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/bookings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          body: JSON.stringify({
+            showtime_id: selectedShowtime.id,
+            seat_ids: selectedSeats,
+          }),
         },
-        body: JSON.stringify({
-          showtime_id: selectedShowtime.id,
-          seat_ids: selectedSeats,
-        }),
-      });
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Đặt vé thất bại');
+        throw new Error(
+          data.error || 'Đặt vé thất bại',
+        );
       }
 
-      setMessage(
-        `Đặt vé thành công! Mã đặt vé: ${data.booking.booking_ref}`,
-      );
+      setMessage('Đặt vé thành công!');
 
       setSelectedSeats([]);
     } catch (error) {
-      if (error instanceof Error) {
-        setMessage(error.message);
-      } else {
-        setMessage('Đặt vé thất bại.');
-      }
-    } finally {
-      setLoading(false);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Đặt vé thất bại',
+      );
     }
   };
 
-  /*
-   * Back from seats -> showtimes.
-   */
+  /* =========================
+     GET UNIQUE DATES
+  ========================= */
 
-  const cancelSeatSelection = () => {
-    setSelectedSeats([]);
-    setSeatDialogOpen(false);
-    setShowtimeDialogOpen(true);
-  };
+  const dates: string[] = [];
 
-  /*
-   * Back from showtimes -> days.
-   */
+  showtimes.forEach((showtime) => {
+    if (!dates.includes(showtime.show_date)) {
+      dates.push(showtime.show_date);
+    }
+  });
 
-  const backToShowdays = () => {
-    setShowtimeDialogOpen(false);
-    setShowdayDialogOpen(true);
-  };
-
-  if (movieLoading) {
-    return (
-      <Box
-        sx={{
-          minHeight: '60vh',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  /* =========================
+     RENDER
+  ========================= */
 
   return (
-    <Box sx={{ py: 5 }}>
-      {/* Movie information */}
+    <Box sx={{ p: 4 }}>
+
+      {/* ================= MOVIE ================= */}
 
       <Dialog
-        open={movieDialogOpen}
-        onClose={() => setMovieDialogOpen(false)}
+        open={movieOpen}
+        onClose={() => setMovieOpen(false)}
         fullWidth
-        maxWidth="md"
+        maxWidth="sm"
       >
         <DialogTitle>
-          {movie?.title_vn || movie?.title || 'Thông tin phim'}
+          {movie.title_vn || movie.title}
         </DialogTitle>
 
-        <DialogContent dividers>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {movie?.poster ? (
-                <Box
-                  component="img"
-                  src={movie.poster}
-                  alt={movie.title_vn || movie.title || 'Movie poster'}
-                  sx={{
-                    width: '100%',
-                    borderRadius: 2,
-                    display: 'block',
-                  }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    width: '100%',
-                    aspectRatio: '2 / 3',
-                    backgroundColor: '#ddd',
-                    borderRadius: 2,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography>Poster</Typography>
-                </Box>
-              )}
-            </Grid>
+        <DialogContent>
 
-            <Grid size={{ xs: 12, sm: 8 }}>
-              <Typography variant="h5" gutterBottom>
-                {movie?.title_vn || movie?.title || 'Phim mẫu'}
-              </Typography>
+          <Typography>
+            Thể loại: {movie.genre}
+          </Typography>
 
-              <Typography sx={{ mb: 1 }}>
-                <strong>Thể loại:</strong>{' '}
-                {movie?.genre || 'Đang cập nhật'}
-              </Typography>
+          <Typography>
+            Đạo diễn: {movie.director}
+          </Typography>
 
-              <Typography sx={{ mb: 1 }}>
-                <strong>Đạo diễn:</strong>{' '}
-                {movie?.director || 'Đang cập nhật'}
-              </Typography>
+          <Typography>
+            Diễn viên: {movie.cast}
+          </Typography>
 
-              <Typography sx={{ mb: 1 }}>
-                <strong>Diễn viên:</strong>{' '}
-                {movie?.cast || 'Đang cập nhật'}
-              </Typography>
+          <Typography>
+            Thời lượng: {movie.duration} phút
+          </Typography>
 
-              <Typography sx={{ mb: 1 }}>
-                <strong>Thời lượng:</strong>{' '}
-                {movie?.duration
-                  ? `${movie.duration} phút`
-                  : 'Đang cập nhật'}
-              </Typography>
+          <Typography>
+            Ngày phát hành: {movie.release_date}
+          </Typography>
 
-              <Typography sx={{ mb: 1 }}>
-                <strong>Ngày phát hành:</strong>{' '}
-                {movie?.release_date || 'Đang cập nhật'}
-              </Typography>
+          <Typography>
+            Rating: {movie.rating}
+          </Typography>
 
-              <Typography sx={{ mb: 1 }}>
-                <strong>Đánh giá:</strong>{' '}
-                {movie?.rating ?? 'Đang cập nhật'}
-              </Typography>
+          <Typography sx={{ mt: 2 }}>
+            {movie.synopsis}
+          </Typography>
 
-              <Typography sx={{ mt: 2 }}>
-                {movie?.synopsis || 'Chưa có mô tả phim.'}
-              </Typography>
-            </Grid>
-          </Grid>
         </DialogContent>
 
         <DialogActions>
+
           <Button
-            onClick={() => setMovieDialogOpen(false)}
+            onClick={() => setMovieOpen(false)}
           >
             Đóng
           </Button>
 
           <Button
             variant="contained"
-            onClick={() => {
-              setMovieDialogOpen(false);
-              void loadShowdays();
-            }}
+            onClick={openDates}
           >
-            Đặt vé
+            Book Now
           </Button>
+
         </DialogActions>
       </Dialog>
 
-      {/* Show days */}
+      {/* ================= DATE ================= */}
 
       <Dialog
-        open={showdayDialogOpen}
-        onClose={() => setShowdayDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Chọn ngày chiếu</DialogTitle>
-
-        <DialogContent dividers>
-          {loading ? (
-            <Box
-              sx={{
-                py: 4,
-                display: 'flex',
-                justifyContent: 'center',
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : showDays.length === 0 ? (
-            <Typography>
-              Hiện chưa có ngày chiếu.
-            </Typography>
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 1.5,
-              }}
-            >
-              {showDays.map((date) => (
-                <Button
-                  key={date}
-                  variant={
-                    selectedDate === date
-                      ? 'contained'
-                      : 'outlined'
-                  }
-                  onClick={() => void selectDate(date)}
-                >
-                  {formatDate(date)}
-                </Button>
-              ))}
-            </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setShowdayDialogOpen(false);
-              setMovieDialogOpen(true);
-            }}
-          >
-            Quay lại
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Showtimes */}
-
-      <Dialog
-        open={showtimeDialogOpen}
-        onClose={() => setShowtimeDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
+        open={dateOpen}
+        onClose={() => setDateOpen(false)}
       >
         <DialogTitle>
-          Suất chiếu
-          {selectedDate ? ` - ${formatDate(selectedDate)}` : ''}
+          Chọn ngày chiếu
         </DialogTitle>
 
-        <DialogContent dividers>
-          {showtimes.filter(
-            (showtime) =>
-              !selectedDate ||
-              showtime.show_date === selectedDate,
-          ).length === 0 ? (
-            <Typography>
-              Không có suất chiếu trong ngày này.
-            </Typography>
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
-              }}
-            >
-              {showtimes
-                .filter(
-                  (showtime) =>
-                    !selectedDate ||
-                    showtime.show_date === selectedDate,
-                )
-                .map((showtime) => (
-                  <Button
-                    key={showtime.id}
-                    variant="outlined"
-                    onClick={() => void selectShowtime(showtime)}
-                    sx={{
-                      justifyContent: 'space-between',
-                      py: 1.5,
-                    }}
-                  >
-                    <span>
-                      {showtime.show_time}
-                    </span>
+        <DialogContent>
 
-                    <span>
-                      {showtime.cinema_room_name ||
-                        `Phòng ${showtime.cinema_room_number}`}
-                    </span>
-                  </Button>
-                ))}
-            </Box>
-          )}
+          {dates.map((date) => (
+            <Button
+              key={date}
+              variant="outlined"
+              onClick={() => selectDate(date)}
+              sx={{ m: 1 }}
+            >
+              {date}
+            </Button>
+          ))}
+
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={backToShowdays}>
+
+          <Button
+            onClick={() => {
+              setDateOpen(false);
+              setMovieOpen(true);
+            }}
+          >
             Quay lại
           </Button>
+
         </DialogActions>
       </Dialog>
 
-      {/* Seat selection */}
+      {/* ================= SHOWTIME ================= */}
 
       <Dialog
-        open={seatDialogOpen}
-        onClose={cancelSeatSelection}
+        open={showtimeOpen}
+        onClose={() => setShowtimeOpen(false)}
+      >
+        <DialogTitle>
+          Chọn suất chiếu
+        </DialogTitle>
+
+        <DialogContent>
+
+          <Typography sx={{ mb: 2 }}>
+            Ngày: {selectedDate}
+          </Typography>
+
+          {showtimes
+            .filter(
+              (showtime) =>
+                showtime.show_date === selectedDate,
+            )
+            .map((showtime) => (
+              <Button
+                key={showtime.id}
+                variant="outlined"
+                fullWidth
+                onClick={() =>
+                  selectShowtime(showtime)
+                }
+                sx={{ mb: 1 }}
+              >
+                {showtime.show_time}
+                {' - '}
+                Phòng {showtime.cinema_room_number}
+              </Button>
+            ))}
+
+        </DialogContent>
+
+        <DialogActions>
+
+          <Button
+            onClick={() => {
+              setShowtimeOpen(false);
+              setDateOpen(true);
+            }}
+          >
+            Quay lại
+          </Button>
+
+        </DialogActions>
+      </Dialog>
+
+      {/* ================= SEATS ================= */}
+
+      <Dialog
+        open={seatOpen}
+        onClose={() => setSeatOpen(false)}
         fullWidth
-        maxWidth="lg"
+        maxWidth="md"
       >
         <DialogTitle>
           Chọn ghế
-          {selectedShowtime
-            ? ` - ${selectedShowtime.show_time}`
-            : ''}
         </DialogTitle>
 
-        <DialogContent dividers>
-          {seatLoading ? (
-            <Box
-              sx={{
-                minHeight: 300,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Grid container spacing={4}>
-              {/* Room */}
+        <DialogContent>
 
-              <Grid size={{ xs: 12, md: 8 }}>
+          <Typography sx={{ mb: 2 }}>
+            Phim:{' '}
+            {movie.title_vn || movie.title}
+          </Typography>
+
+          <Typography sx={{ mb: 2 }}>
+            Suất:{' '}
+            {selectedShowtime?.show_time}
+          </Typography>
+
+          {/* Screen */}
+
+          <Box
+            sx={{
+              textAlign: 'center',
+              backgroundColor: '#ddd',
+              p: 1,
+              mb: 3,
+            }}
+          >
+            MÀN HÌNH
+          </Box>
+
+          {/* Seats */}
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            {['A', 'B', 'C'].map((row) => (
+              <Box
+                key={row}
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                }}
+              >
+                {seats
+                  .filter(
+                    (seat) =>
+                      seat.row_label === row,
+                  )
+                  .map((seat) => (
+                    <Button
+                      key={seat.id}
+                      disabled={seat.booked}
+                      variant={
+                        selectedSeats.includes(
+                          seat.id,
+                        )
+                          ? 'contained'
+                          : 'outlined'
+                      }
+                      onClick={() =>
+                        toggleSeat(seat)
+                      }
+                      sx={{
+                        minWidth: 45,
+
+                        '&.Mui-disabled': {
+                          backgroundColor:
+                            '#d32f2f',
+                          color: 'white',
+                        },
+                      }}
+                    >
+                      {seat.seat_code}
+                    </Button>
+                  ))}
+              </Box>
+            ))}
+          </Box>
+
+          {/* Summary */}
+
+          <Card sx={{ mt: 4 }}>
+            <CardContent>
+
+              <Typography>
+                Ghế đã chọn:{' '}
+                {selectedSeats.length > 0
+                  ? selectedSeats.join(', ')
+                  : 'Chưa chọn'}
+              </Typography>
+
+              <Typography sx={{ mt: 1 }}>
+                Giá mỗi ghế:{' '}
+                {price.toLocaleString('vi-VN')}
+                {' VNĐ'}
+              </Typography>
+
+              <Typography
+                variant="h6"
+                sx={{ mt: 1 }}
+              >
+                Tổng tiền:{' '}
+                {total.toLocaleString('vi-VN')}
+                {' VNĐ'}
+              </Typography>
+
+              {message && (
                 <Typography
-                  align="center"
                   sx={{
-                    mb: 4,
-                    py: 1,
-                    backgroundColor: '#ddd',
-                    borderRadius: 1,
-                    fontWeight: 'bold',
+                    mt: 2,
+                    color: 'error.main',
                   }}
                 >
-                  MÀN HÌNH
+                  {message}
                 </Typography>
+              )}
 
-                {seatRows.map(([row, rowSeats]) => (
-                  <Box
-                    key={row}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        width: 25,
-                        display: 'flex',
-                        alignItems: 'center',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {row}
-                    </Typography>
+            </CardContent>
+          </Card>
 
-                    {rowSeats.map((seat) => {
-                      const selected =
-                        selectedSeats.includes(seat.id);
-
-                      return (
-                        <Button
-                          key={seat.id}
-                          variant={
-                            selected
-                              ? 'contained'
-                              : 'outlined'
-                          }
-                          disabled={seat.booked}
-                          onClick={() =>
-                            toggleSeat(seat)
-                          }
-                          sx={{
-                            minWidth: 48,
-                            height: 40,
-                            backgroundColor: seat.booked
-                              ? '#d32f2f'
-                              : undefined,
-                            color: seat.booked
-                              ? '#fff'
-                              : undefined,
-                            '&.Mui-disabled': {
-                              backgroundColor: '#d32f2f',
-                              color: '#fff',
-                            },
-                          }}
-                        >
-                          {seat.seat_code}
-                        </Button>
-                      );
-                    })}
-                  </Box>
-                ))}
-
-                <Box
-                  sx={{
-                    mt: 4,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: 3,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        border: '1px solid #1976d2',
-                      }}
-                    />
-                    <Typography>
-                      Còn trống
-                    </Typography>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        backgroundColor: '#1976d2',
-                      }}
-                    />
-                    <Typography>
-                      Đang chọn
-                    </Typography>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        backgroundColor: '#d32f2f',
-                      }}
-                    />
-                    <Typography>
-                      Đã đặt
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-
-              {/* Booking summary */}
-
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6">
-                      Thông tin đặt vé
-                    </Typography>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Typography>
-                      <strong>Phim:</strong>{' '}
-                      {movie?.title_vn ||
-                        movie?.title ||
-                        'Phim mẫu'}
-                    </Typography>
-
-                    <Typography sx={{ mt: 1 }}>
-                      <strong>Ngày:</strong>{' '}
-                      {selectedDate
-                        ? formatDate(selectedDate)
-                        : '---'}
-                    </Typography>
-
-                    <Typography sx={{ mt: 1 }}>
-                      <strong>Suất:</strong>{' '}
-                      {selectedShowtime?.show_time ||
-                        '---'}
-                    </Typography>
-
-                    <Typography sx={{ mt: 1 }}>
-                      <strong>Phòng:</strong>{' '}
-                      {selectedShowtime?.cinema_room_name ||
-                        `Phòng ${
-                          selectedShowtime?.cinema_room_number ||
-                          ''
-                        }`}
-                    </Typography>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Typography>
-                      <strong>Ghế:</strong>
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        mt: 1,
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {selectedSeatObjects.length > 0
-                        ? selectedSeatObjects
-                            .map((seat) => seat.seat_code)
-                            .join(', ')
-                        : 'Chưa chọn ghế'}
-                    </Typography>
-
-                    <Typography
-                      variant="h6"
-                      sx={{ mt: 3 }}
-                    >
-                      Tổng tiền
-                    </Typography>
-
-                    <Typography
-                      variant="h5"
-                      sx={{ mt: 1 }}
-                    >
-                      {formatPrice(totalPrice)}
-                    </Typography>
-
-                    {message && (
-                      <Typography
-                        sx={{
-                          mt: 2,
-                          color: message.includes(
-                            'thành công',
-                          )
-                            ? 'success.main'
-                            : 'error.main',
-                        }}
-                      >
-                        {message}
-                      </Typography>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          )}
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={cancelSeatSelection}>
-            Hủy
+
+          {/* Cancel → showtimes */}
+
+          <Button
+            onClick={() => {
+              setSeatOpen(false);
+              setShowtimeOpen(true);
+            }}
+          >
+            Cancel
           </Button>
 
           <Button
             variant="contained"
-            disabled={
-              selectedSeats.length === 0 || loading
-            }
-            onClick={() => void confirmBooking()}
+            onClick={bookTickets}
           >
-            {loading ? 'Đang đặt...' : 'Đặt vé'}
+            Book
           </Button>
+
         </DialogActions>
       </Dialog>
+
     </Box>
   );
 };
