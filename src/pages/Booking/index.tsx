@@ -118,9 +118,7 @@ const mockSeats: Seat[] = [
 const BookingPage: React.FC = () => {
   /* Get movieId from URL */
 
-  const movieId = new URLSearchParams(
-    window.location.search,
-  ).get('movieId');
+  const movieId = new URLSearchParams(window.location.search).get('movieId');
 
   /* Movie */
 
@@ -135,19 +133,15 @@ const BookingPage: React.FC = () => {
 
   /* Booking data */
 
-  const [showtimes, setShowtimes] =
-    useState<Showtime[]>([]);
+  const [showtimes, setShowtimes] = useState<Showtime[]>([]);
 
-  const [selectedDate, setSelectedDate] =
-    useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
-  const [selectedShowtime, setSelectedShowtime] =
-    useState<Showtime | null>(null);
+  const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
 
   const [seats, setSeats] = useState<Seat[]>([]);
 
-  const [selectedSeats, setSelectedSeats] =
-    useState<string[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
   const [message, setMessage] = useState('');
 
@@ -160,9 +154,7 @@ const BookingPage: React.FC = () => {
       if (!movieId) return;
 
       try {
-        const response = await fetch(
-          `${API_URL}/movies/${movieId}`,
-        );
+        const response = await fetch(`${API_URL}/movies/${movieId}`);
 
         if (!response.ok) {
           throw new Error();
@@ -185,9 +177,7 @@ const BookingPage: React.FC = () => {
 
   const openDates = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/bookings/showtimes?movie_id=${movieId}`,
-      );
+      const response = await fetch(`${API_URL}/bookings/showtimes?movie_id=${movieId}`);
 
       if (!response.ok) {
         throw new Error();
@@ -224,11 +214,7 @@ const BookingPage: React.FC = () => {
 
       setShowtimes(data.showtimes);
     } catch {
-      setShowtimes(
-        mockShowtimes.filter(
-          (showtime) => showtime.show_date === date,
-        ),
-      );
+      setShowtimes(mockShowtimes.filter((showtime) => showtime.show_date === date));
     }
 
     setDateOpen(false);
@@ -244,9 +230,7 @@ const BookingPage: React.FC = () => {
     setSelectedSeats([]);
 
     try {
-      const response = await fetch(
-        `${API_URL}/bookings/showtimes/${showtime.id}/seats`,
-      );
+      const response = await fetch(`${API_URL}/bookings/showtimes/${showtime.id}/seats`);
 
       if (!response.ok) {
         throw new Error();
@@ -271,16 +255,9 @@ const BookingPage: React.FC = () => {
     if (seat.booked) return;
 
     if (selectedSeats.includes(seat.id)) {
-      setSelectedSeats(
-        selectedSeats.filter(
-          (id) => id !== seat.id,
-        ),
-      );
+      setSelectedSeats(selectedSeats.filter((id) => id !== seat.id));
     } else {
-      setSelectedSeats([
-        ...selectedSeats,
-        seat.id,
-      ]);
+      setSelectedSeats([...selectedSeats, seat.id]);
     }
   };
 
@@ -288,10 +265,7 @@ const BookingPage: React.FC = () => {
      TOTAL PRICE
   ========================= */
 
-  const price =
-    selectedShowtime?.base_price ??
-    movie.base_price ??
-    100000;
+  const price = selectedShowtime?.base_price ?? movie.base_price ?? 100000;
 
   const total = selectedSeats.length * price;
 
@@ -307,9 +281,7 @@ const BookingPage: React.FC = () => {
       return;
     }
 
-    const token =
-      localStorage.getItem('token') ||
-      localStorage.getItem('access_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
 
     if (!token) {
       setMessage('Vui lòng đăng nhập trước.');
@@ -317,40 +289,31 @@ const BookingPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/bookings`,
-        {
-          method: 'POST',
+      const response = await fetch(`${API_URL}/bookings`, {
+        method: 'POST',
 
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            showtime_id: selectedShowtime.id,
-            seat_ids: selectedSeats,
-          }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      );
+
+        body: JSON.stringify({
+          showtime_id: selectedShowtime.id,
+          seat_ids: selectedSeats,
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || 'Đặt vé thất bại',
-        );
+        throw new Error(data.error || 'Đặt vé thất bại');
       }
 
       setMessage('Đặt vé thành công!');
 
       setSelectedSeats([]);
     } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Đặt vé thất bại',
-      );
+      setMessage(error instanceof Error ? error.message : 'Đặt vé thất bại');
     }
   };
 
@@ -372,96 +335,50 @@ const BookingPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 4 }}>
-
       {/* ================= MOVIE ================= */}
 
-      <Dialog
-        open={movieOpen}
-        onClose={() => setMovieOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>
-          {movie.title_vn || movie.title}
-        </DialogTitle>
+      <Dialog open={movieOpen} onClose={() => setMovieOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{movie.title_vn || movie.title}</DialogTitle>
 
         <DialogContent>
+          <Typography>Thể loại: {movie.genre}</Typography>
 
-          <Typography>
-            Thể loại: {movie.genre}
-          </Typography>
+          <Typography>Đạo diễn: {movie.director}</Typography>
 
-          <Typography>
-            Đạo diễn: {movie.director}
-          </Typography>
+          <Typography>Diễn viên: {movie.cast}</Typography>
 
-          <Typography>
-            Diễn viên: {movie.cast}
-          </Typography>
+          <Typography>Thời lượng: {movie.duration} phút</Typography>
 
-          <Typography>
-            Thời lượng: {movie.duration} phút
-          </Typography>
+          <Typography>Ngày phát hành: {movie.release_date}</Typography>
 
-          <Typography>
-            Ngày phát hành: {movie.release_date}
-          </Typography>
+          <Typography>Rating: {movie.rating}</Typography>
 
-          <Typography>
-            Rating: {movie.rating}
-          </Typography>
-
-          <Typography sx={{ mt: 2 }}>
-            {movie.synopsis}
-          </Typography>
-
+          <Typography sx={{ mt: 2 }}>{movie.synopsis}</Typography>
         </DialogContent>
 
         <DialogActions>
+          <Button onClick={() => setMovieOpen(false)}>Đóng</Button>
 
-          <Button
-            onClick={() => setMovieOpen(false)}
-          >
-            Đóng
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={openDates}
-          >
+          <Button variant="contained" onClick={openDates}>
             Book Now
           </Button>
-
         </DialogActions>
       </Dialog>
 
       {/* ================= DATE ================= */}
 
-      <Dialog
-        open={dateOpen}
-        onClose={() => setDateOpen(false)}
-      >
-        <DialogTitle>
-          Chọn ngày chiếu
-        </DialogTitle>
+      <Dialog open={dateOpen} onClose={() => setDateOpen(false)}>
+        <DialogTitle>Chọn ngày chiếu</DialogTitle>
 
         <DialogContent>
-
           {dates.map((date) => (
-            <Button
-              key={date}
-              variant="outlined"
-              onClick={() => selectDate(date)}
-              sx={{ m: 1 }}
-            >
+            <Button key={date} variant="outlined" onClick={() => selectDate(date)} sx={{ m: 1 }}>
               {date}
             </Button>
           ))}
-
         </DialogContent>
 
         <DialogActions>
-
           <Button
             onClick={() => {
               setDateOpen(false);
@@ -470,39 +387,25 @@ const BookingPage: React.FC = () => {
           >
             Quay lại
           </Button>
-
         </DialogActions>
       </Dialog>
 
       {/* ================= SHOWTIME ================= */}
 
-      <Dialog
-        open={showtimeOpen}
-        onClose={() => setShowtimeOpen(false)}
-      >
-        <DialogTitle>
-          Chọn suất chiếu
-        </DialogTitle>
+      <Dialog open={showtimeOpen} onClose={() => setShowtimeOpen(false)}>
+        <DialogTitle>Chọn suất chiếu</DialogTitle>
 
         <DialogContent>
-
-          <Typography sx={{ mb: 2 }}>
-            Ngày: {selectedDate}
-          </Typography>
+          <Typography sx={{ mb: 2 }}>Ngày: {selectedDate}</Typography>
 
           {showtimes
-            .filter(
-              (showtime) =>
-                showtime.show_date === selectedDate,
-            )
+            .filter((showtime) => showtime.show_date === selectedDate)
             .map((showtime) => (
               <Button
                 key={showtime.id}
                 variant="outlined"
                 fullWidth
-                onClick={() =>
-                  selectShowtime(showtime)
-                }
+                onClick={() => selectShowtime(showtime)}
                 sx={{ mb: 1 }}
               >
                 {showtime.show_time}
@@ -510,11 +413,9 @@ const BookingPage: React.FC = () => {
                 Phòng {showtime.cinema_room_number}
               </Button>
             ))}
-
         </DialogContent>
 
         <DialogActions>
-
           <Button
             onClick={() => {
               setShowtimeOpen(false);
@@ -523,33 +424,18 @@ const BookingPage: React.FC = () => {
           >
             Quay lại
           </Button>
-
         </DialogActions>
       </Dialog>
 
       {/* ================= SEATS ================= */}
 
-      <Dialog
-        open={seatOpen}
-        onClose={() => setSeatOpen(false)}
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle>
-          Chọn ghế
-        </DialogTitle>
+      <Dialog open={seatOpen} onClose={() => setSeatOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>Chọn ghế</DialogTitle>
 
         <DialogContent>
+          <Typography sx={{ mb: 2 }}>Phim: {movie.title_vn || movie.title}</Typography>
 
-          <Typography sx={{ mb: 2 }}>
-            Phim:{' '}
-            {movie.title_vn || movie.title}
-          </Typography>
-
-          <Typography sx={{ mb: 2 }}>
-            Suất:{' '}
-            {selectedShowtime?.show_time}
-          </Typography>
+          <Typography sx={{ mb: 2 }}>Suất: {selectedShowtime?.show_time}</Typography>
 
           {/* Screen */}
 
@@ -583,30 +469,18 @@ const BookingPage: React.FC = () => {
                 }}
               >
                 {seats
-                  .filter(
-                    (seat) =>
-                      seat.row_label === row,
-                  )
+                  .filter((seat) => seat.row_label === row)
                   .map((seat) => (
                     <Button
                       key={seat.id}
                       disabled={seat.booked}
-                      variant={
-                        selectedSeats.includes(
-                          seat.id,
-                        )
-                          ? 'contained'
-                          : 'outlined'
-                      }
-                      onClick={() =>
-                        toggleSeat(seat)
-                      }
+                      variant={selectedSeats.includes(seat.id) ? 'contained' : 'outlined'}
+                      onClick={() => toggleSeat(seat)}
                       sx={{
                         minWidth: 45,
 
                         '&.Mui-disabled': {
-                          backgroundColor:
-                            '#d32f2f',
+                          backgroundColor: '#d32f2f',
                           color: 'white',
                         },
                       }}
@@ -622,26 +496,17 @@ const BookingPage: React.FC = () => {
 
           <Card sx={{ mt: 4 }}>
             <CardContent>
-
               <Typography>
-                Ghế đã chọn:{' '}
-                {selectedSeats.length > 0
-                  ? selectedSeats.join(', ')
-                  : 'Chưa chọn'}
+                Ghế đã chọn: {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'Chưa chọn'}
               </Typography>
 
               <Typography sx={{ mt: 1 }}>
-                Giá mỗi ghế:{' '}
-                {price.toLocaleString('vi-VN')}
+                Giá mỗi ghế: {price.toLocaleString('vi-VN')}
                 {' VNĐ'}
               </Typography>
 
-              <Typography
-                variant="h6"
-                sx={{ mt: 1 }}
-              >
-                Tổng tiền:{' '}
-                {total.toLocaleString('vi-VN')}
+              <Typography variant="h6" sx={{ mt: 1 }}>
+                Tổng tiền: {total.toLocaleString('vi-VN')}
                 {' VNĐ'}
               </Typography>
 
@@ -655,14 +520,11 @@ const BookingPage: React.FC = () => {
                   {message}
                 </Typography>
               )}
-
             </CardContent>
           </Card>
-
         </DialogContent>
 
         <DialogActions>
-
           {/* Cancel → showtimes */}
 
           <Button
@@ -674,16 +536,11 @@ const BookingPage: React.FC = () => {
             Cancel
           </Button>
 
-          <Button
-            variant="contained"
-            onClick={bookTickets}
-          >
+          <Button variant="contained" onClick={bookTickets}>
             Book
           </Button>
-
         </DialogActions>
       </Dialog>
-
     </Box>
   );
 };
