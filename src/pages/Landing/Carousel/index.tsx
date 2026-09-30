@@ -34,17 +34,17 @@ interface CarouselSlide {
 }
 
 const BannerSlides: CarouselSlide[] = [
-  { id: 'scotty', image: scotty, alt: 'Scotty giải cứu hoàng thượng', path: '/#now-showing', kind: 'banner' },
-  { id: 'quyet-cua', image: quyetCua, alt: 'Quyết của anh này', path: '/#now-showing', kind: 'banner' },
-  { id: 'brad-pitt', image: bradPitt, alt: 'Trái tim quái thú', path: '/#now-showing', kind: 'banner' },
-  { id: 'studio-ghibli', image: studioGhibli, alt: 'Hành trình tìm lại bản thân cùng Studio Ghibli', path: '/#now-showing', kind: 'banner' },
-  { id: 'suzume', image: suzume, alt: 'Khóa chặt cửa nào Suzume', path: '/#now-showing', kind: 'banner' },
-  { id: 'moon-festival', image: moonFestival, alt: 'Ưu đãi Tết Trung thu', path: '/#member-events', kind: 'banner' },
-  { id: 'battle', image: battle, alt: 'Vĩnh biệt đại chiến', path: '/#now-showing', kind: 'banner' },
-  { id: 'visa-apple-pay', image: visa, alt: 'Ưu đãi thanh toán Visa Apple Pay', path: '/#member-events', kind: 'banner' },
-  { id: 'fan-c', image: fanC, alt: 'Đặc quyền thành viên Fan C', path: '/events/member-special', kind: 'banner' },
-  { id: 'lays', image: lays, alt: 'Ưu đãi combo Lays', path: '/#member-events', kind: 'banner' },
-  { id: 'vnpay', image: vcb, alt: 'Ưu đãi VNPAY phim', path: '/#member-events', kind: 'banner' },
+  { id: 'scotty', image: scotty, alt: 'Scotty giải cứu hoàng thượng', kind: 'banner' },
+  { id: 'quyet-cua', image: quyetCua, alt: 'Quyết của anh này', kind: 'banner' },
+  { id: 'brad-pitt', image: bradPitt, alt: 'Trái tim quái thú', kind: 'banner' },
+  { id: 'studio-ghibli', image: studioGhibli, alt: 'Hành trình tìm lại bản thân cùng Studio Ghibli', kind: 'banner' },
+  { id: 'suzume', image: suzume, alt: 'Khóa chặt cửa nào Suzume', kind: 'banner' },
+  { id: 'moon-festival', image: moonFestival, alt: 'Ưu đãi Tết Trung thu', kind: 'banner' },
+  { id: 'battle', image: battle, alt: 'Vĩnh biệt đại chiến', kind: 'banner' },
+  { id: 'visa-apple-pay', image: visa, alt: 'Ưu đãi thanh toán Visa Apple Pay', kind: 'banner' },
+  { id: 'fan-c', image: fanC, alt: 'Đặc quyền thành viên Fan C', kind: 'banner' },
+  { id: 'lays', image: lays, alt: 'Ưu đãi combo Lays', kind: 'banner' },
+  { id: 'vnpay', image: vcb, alt: 'Ưu đãi VNPAY phim', kind: 'banner' },
 ];
 
 const Carousel: React.FC<CarouselProps> = ({ movies }) => {

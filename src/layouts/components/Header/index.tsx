@@ -7,7 +7,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import type { IButtonWithIconAndDisplayText } from '@/types';
 
 const utilityLinks: IButtonWithIconAndDisplayText[] = [
-  { display: 'Tin mới & ưu đãi', link: '/#member-events', icon: ConfirmationNumberIcon },
+  { display: 'Tin mới & ưu đãi', link: '/new_and_sale', icon: ConfirmationNumberIcon },
   { display: 'Vé của tôi', link: '/check_ticket', icon: LoyaltyIcon },
   { display: 'Đăng nhập / Đăng ký', link: '/sign_in', icon: PersonIcon },
 ];

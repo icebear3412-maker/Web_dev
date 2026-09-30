@@ -27,7 +27,12 @@ const MovieDetails: React.FC = () => {
           <Box className="api-loading"><CircularProgress size={24} /> Đang tải thông tin phim…</Box>
         ) : (
           <Box className="movie-detail-card">
-            <Box className="movie-detail-poster" sx={{ backgroundImage: `url(${movie.backdrop || movie.poster || ''})` }} />
+            <Box
+              component="img"
+              className="movie-detail-poster"
+              src={movie.backdrop || movie.poster || undefined}
+              alt={movie.title_vn || movie.title || 'Poster phim'}
+            />
             <Box className="movie-detail-copy">
               <Typography className="movie-detail-kicker">ĐANG CHIẾU</Typography>
               <Typography component="h1" className="movie-detail-title">{movie.title_vn || movie.title || 'Tên phim sẽ cập nhật sau'}</Typography>

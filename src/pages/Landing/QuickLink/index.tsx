@@ -16,13 +16,13 @@ interface QuickLinkCard extends ICardWithLink {
 }
 
 const cards: QuickLinkCard[] = [
-  { label: 'Rạp chiếu', image: cgvTheater, linkTo: '/cinemas' },
-  { label: 'Phim đang chiếu', image: nowShowing, linkTo: '/#now-showing' },
-  { label: 'CGV Special', image: cgvSpecial, linkTo: '/#member-events' },
+  { label: 'Rạp chiếu', image: cgvTheater, linkTo: '/location' },
+  { label: 'Phim đang chiếu', image: nowShowing, linkTo: '/now_showing' },
+  { label: 'CGV Special', image: cgvSpecial, linkTo: '/special_room' },
   { label: 'Thuê phòng', image: cgvMember, linkTo: '/rent' },
-  { label: 'Liên hệ CGV', image: lienHeCgv, linkTo: '/#site-footer' },
-  { label: 'Tin mới và ưu đãi', image: newsOffers, linkTo: '/#member-events' },
-  { label: 'Đăng ký thành viên', image: registerNow, linkTo: '/sign_in' },
+  { label: 'Liên hệ CGV', image: lienHeCgv, linkTo: '/contact' },
+  { label: 'Tin mới và ưu đãi', image: newsOffers, linkTo: '/new_offer' },
+  { label: 'Đăng ký thành viên', image: registerNow, linkTo: '/signup' },
 ];
 
 const QuickLinks: React.FC = () => {
