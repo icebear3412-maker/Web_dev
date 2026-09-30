@@ -1,0 +1,26 @@
+Database migration notes
+
+- 'versions/20260918_0001_initial_schema.py' is the base migration. It creates the original SV Cinema database structure on an empty database.
+
+- For every later database-structure change, create one new revision:
+cd backend
+alembic revision -m "describe the database change"
+
+- Write the forward database change in 'upgrade()' and its reversal in 'downgrade()'. Apply all pending changes with:
+alembic upgrade head
+
+- Do not edit or delete a migration after it has been deployed to a shared database. Alembic needs the file to track and safely reverse that change.
+
+- Before rolling back a database with important data, create a backup.
+
+- To roll back one migration version from the project root:
+docker compose up -d db
+docker compose run --rm --no-deps web alembic -c backend/alembic.ini downgrade -1
+
+- To check the current migration version:
+docker compose run --rm --no-deps web alembic -c backend/alembic.ini current
+
+- To roll back to a specific version, use its revision ID:
+docker compose run --rm --no-deps web alembic -c backend/alembic.ini downgrade 20260918_0001
+
+- If the rollback removes a column used by the current frontend/backend, run the matching older application version too.
