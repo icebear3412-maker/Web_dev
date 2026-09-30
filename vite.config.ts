@@ -7,4 +7,18 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+
+  server: {
+    proxy: {
+      '/movies': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+
+      '/auth': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
 });

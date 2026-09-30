@@ -1,15 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import {
   Add,
   CalendarMonth,
+  Delete,
   Edit,
   KeyboardArrowDown,
   KeyboardArrowUp,
-  Movie,
-  PlayArrow,
   Restore,
   VisibilityOff,
 } from '@mui/icons-material';
+
 import {
   Box,
   Button,
@@ -19,8 +20,6 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  FormControl,
-  InputLabel,
   MenuItem,
   Paper,
   Select,
@@ -30,6 +29,7 @@ import {
 } from '@mui/material';
 
 interface Screening {
+  id: number;
   time: string;
   room: string;
 }
@@ -45,72 +45,77 @@ interface MovieItem {
   screenings: Screening[];
 }
 
-const initialMovies: MovieItem[] = [
-  {
-    id: 1,
-    title: 'Dune: Part Two',
-    genre: 'Sci-Fi',
-    duration: 166,
-    releaseDate: '2026-09-10',
-    image: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
-    status: 'Showing',
-    screenings: [
-      { time: '10:00', room: 'Room 1' },
-      { time: '14:00', room: 'Room 2' },
-      { time: '19:30', room: 'Room 1' },
-    ],
-  },
-  {
-    id: 2,
-    title: 'How to Train Your Dragon',
-    genre: 'Adventure',
-    duration: 125,
-    releaseDate: '2026-09-12',
-    image: 'https://image.tmdb.org/t/p/w500/ygGmAO60t8GyqLGSZS6Qh2lH8kU.jpg',
-    status: 'Showing',
-    screenings: [
-      { time: '11:30', room: 'Room 3' },
-      { time: '18:00', room: 'Room 3' },
-    ],
-  },
-  {
-    id: 3,
-    title: 'The Batman',
-    genre: 'Action',
-    duration: 176,
-    releaseDate: '2026-08-20',
-    image: 'https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg',
-    status: 'Hidden',
-    screenings: [],
-  },
-];
+interface MovieForm {
+  title: string;
+  genre: string;
+  image: string;
+  duration: number;
+  releaseDate: string;
+}
 
-const emptyMovie: Omit<MovieItem, 'id' | 'status'> = {
+const emptyMovie: MovieForm = {
   title: '',
   genre: '',
+  image: '',
   duration: 120,
   releaseDate: '',
-  poster: '',
-  screenings: [],
 };
 
-const MovieListPage = () => {
+const MovieListPage: React.FC = () => {
   const [movies, setMovies] = useState<MovieItem[]>([]);
-  React.useEffect(() => {
-  fetch('/movies')
-    .then((response) => response.json())
-    .then((data) => {
-      setMovies(data);
-    })
-    .catch((error) => {
-      console.error('Failed to fetch movies:', error);
-    });
-}, []);
+
   const [editingMovie, setEditingMovie] = useState<MovieItem | null>(null);
+
   const [addingMovie, setAddingMovie] = useState(false);
-  const [newMovie, setNewMovie] = useState(emptyMovie);
+
+  const [newMovie, setNewMovie] = useState<MovieForm>(emptyMovie);
+
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [newScreening, setNewScreening] = useState<Screening>({ time: '', room: 'Room 1' });
+
+  const [newScreening, setNewScreening] = useState({
+    time: '',
+    room: 'Room 1',
+  });
+
+  // ==========================================================
+  // LOAD MOVIES
+  // ==========================================================
+
+  const loadMovies = async () => {
+    try {
+      const response = await fetch('/movies');
+
+      if (!response.ok) {
+        throw new Error('Failed to load movies');
+      }
+
+      const data = await response.json();
+
+      const formattedMovies: MovieItem[] = data.map((movie: any) => ({
+        id: Number(movie.id),
+        title: movie.title || '',
+        genre: movie.genre || '',
+        image: movie.poster || '',
+        duration: Number(movie.duration) || 0,
+        releaseDate: movie.release_date || '',
+        status: movie.status === 'showing' ? 'Showing' : 'Hidden',
+        screenings: [],
+      }));
+
+      setMovies(formattedMovies);
+    } catch (error) {
+      console.error('Failed to load movies:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadMovies();
+  }, []);
+
+  // ==========================================================
+  // SORT MOVIES
+  // Showing first
+  // ==========================================================
 
   const sortedMovies = useMemo(
     () =>
@@ -118,60 +123,399 @@ const MovieListPage = () => {
     [movies],
   );
 
-  const updateMovie = (movie: MovieItem) => {
-    setMovies((current) => current.map((item) => (item.id === movie.id ? movie : item)));
-    setEditingMovie(null);
+  // ==========================================================
+  // LOAD SCREENINGS
+  // ==========================================================
+
+  const loadScreenings = async (movieId: number): Promise<Screening[]> => {
+    try {
+      const response = await fetch(`/movies/${movieId}/screenings`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load screenings');
+      }
+
+      const data = await response.json();
+
+      return data.map((screening: any) => ({
+        id: Number(screening.id),
+        time: screening.time,
+        room: screening.room,
+      }));
+    } catch (error) {
+      console.error('Failed to load screenings:', error);
+
+      return [];
+    }
   };
 
-  const addMovie = () => {
-    if (!newMovie.title.trim()) return;
-    setMovies((current) => [
-      ...current,
-      {
-        ...newMovie,
-        id: Math.max(0, ...current.map((movie) => movie.id)) + 1,
-        status: 'Showing',
-      },
-    ]);
-    setNewMovie(emptyMovie);
-    setAddingMovie(false);
+  // ==========================================================
+  // OPEN MODIFY
+  // ==========================================================
+
+  const openModify = async (movie: MovieItem) => {
+    const screenings = await loadScreenings(movie.id);
+
+    setEditingMovie({
+      ...movie,
+      screenings,
+    });
+
+    setNewScreening({
+      time: '',
+      room: 'Room 1',
+    });
   };
 
-  const toggleMovieStatus = (id: number) => {
+  // ==========================================================
+  // DETAILS
+  // ==========================================================
+
+  const toggleDetails = async (movieId: number) => {
+    if (expandedId === movieId) {
+      setExpandedId(null);
+      return;
+    }
+
+    const screenings = await loadScreenings(movieId);
+
     setMovies((current) =>
       current.map((movie) =>
-        movie.id === id
-          ? { ...movie, status: movie.status === 'Showing' ? 'Hidden' : 'Showing' }
+        movie.id === movieId
+          ? {
+              ...movie,
+              screenings,
+            }
           : movie,
       ),
     );
+
+    setExpandedId(movieId);
   };
 
-  const addScreening = () => {
-    if (!editingMovie || !newScreening.time) return;
-    setEditingMovie({
-      ...editingMovie,
-      screenings: [...editingMovie.screenings, newScreening],
-    });
-    setNewScreening({ time: '', room: 'Room 1' });
+  // ==========================================================
+  // UPDATE MOVIE
+  // ==========================================================
+
+  const updateMovie = async (movie: MovieItem) => {
+    try {
+      const response = await fetch(`/movies/${movie.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: movie.title,
+          genre: movie.genre,
+          duration: Number(movie.duration),
+          release_date: movie.releaseDate || null,
+          poster: movie.image,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update movie');
+      }
+
+      const updatedMovie = await response.json();
+
+      setMovies((current) =>
+        current.map((item) =>
+          item.id === movie.id
+            ? {
+                ...item,
+                title: updatedMovie.title,
+                genre: updatedMovie.genre || '',
+                duration: Number(updatedMovie.duration) || 0,
+                releaseDate: updatedMovie.release_date || '',
+                image: updatedMovie.poster || '',
+              }
+            : item,
+        ),
+      );
+
+      setEditingMovie(null);
+    } catch (error) {
+      console.error('Failed to update movie:', error);
+    }
   };
 
-  const removeScreening = (index: number) => {
-    if (!editingMovie) return;
-    setEditingMovie({
-      ...editingMovie,
-      screenings: editingMovie.screenings.filter((_, itemIndex) => itemIndex !== index),
-    });
+  // ==========================================================
+  // ADD MOVIE
+  // ==========================================================
+
+  const addMovie = async () => {
+    if (!newMovie.title.trim()) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/movies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newMovie.title,
+          genre: newMovie.genre,
+          duration: Number(newMovie.duration),
+          release_date: newMovie.releaseDate || null,
+          poster: newMovie.image,
+          status: 'showing',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create movie');
+      }
+
+      const createdMovie = await response.json();
+
+      const movie: MovieItem = {
+        id: Number(createdMovie.id),
+        title: createdMovie.title || '',
+        genre: createdMovie.genre || '',
+        image: createdMovie.poster || '',
+        duration: Number(createdMovie.duration) || 0,
+        releaseDate: createdMovie.release_date || '',
+        status: createdMovie.status === 'showing' ? 'Showing' : 'Hidden',
+        screenings: [],
+      };
+
+      setMovies((current) => [...current, movie]);
+
+      setNewMovie(emptyMovie);
+      setAddingMovie(false);
+    } catch (error) {
+      console.error('Failed to create movie:', error);
+    }
   };
+
+  // ==========================================================
+  // TAKE DOWN / RESTORE
+  // ==========================================================
+
+  const toggleMovieStatus = async (id: number) => {
+    const movie = movies.find((item) => item.id === id);
+
+    if (!movie) {
+      return;
+    }
+
+    const newStatus = movie.status === 'Showing' ? 'hidden' : 'showing';
+
+    try {
+      const response = await fetch(`/movies/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update movie status');
+      }
+
+      const updatedMovie = await response.json();
+
+      setMovies((current) =>
+        current.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status: updatedMovie.status === 'showing' ? 'Showing' : 'Hidden',
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
+      console.error('Failed to update movie status:', error);
+    }
+  };
+
+  // ==========================================================
+  // DELETE MOVIE
+  // ==========================================================
+
+  const deleteMovie = async (id: number) => {
+    const movie = movies.find((item) => item.id === id);
+
+    if (!movie) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${movie.title}"?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/movies/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete movie');
+      }
+
+      setMovies((current) => current.filter((item) => item.id !== id));
+
+      if (expandedId === id) {
+        setExpandedId(null);
+      }
+
+      if (editingMovie?.id === id) {
+        setEditingMovie(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete movie:', error);
+    }
+  };
+
+  // ==========================================================
+  // ADD SCREENING
+  // ==========================================================
+
+  const addScreening = async () => {
+    if (!editingMovie || !newScreening.time) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/movies/${editingMovie.id}/screenings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          time: newScreening.time,
+          room: newScreening.room,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add screening');
+      }
+
+      const screening = await response.json();
+
+      const newScreeningItem: Screening = {
+        id: Number(screening.id),
+        time: screening.time,
+        room: screening.room,
+      };
+
+      setEditingMovie((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          screenings: [...current.screenings, newScreeningItem],
+        };
+      });
+
+      // Also update the movie list
+      setMovies((current) =>
+        current.map((movie) =>
+          movie.id === editingMovie.id
+            ? {
+                ...movie,
+                screenings: [...movie.screenings, newScreeningItem],
+              }
+            : movie,
+        ),
+      );
+
+      setNewScreening({
+        time: '',
+        room: 'Room 1',
+      });
+    } catch (error) {
+      console.error('Failed to add screening:', error);
+    }
+  };
+
+  // ==========================================================
+  // REMOVE SCREENING
+  // ==========================================================
+
+  const removeScreening = async (screeningId: number) => {
+    if (!editingMovie) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/movies/${editingMovie.id}/screenings/${screeningId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete screening');
+      }
+
+      setEditingMovie((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          screenings: current.screenings.filter((screening) => screening.id !== screeningId),
+        };
+      });
+
+      setMovies((current) =>
+        current.map((movie) =>
+          movie.id === editingMovie.id
+            ? {
+                ...movie,
+                screenings: movie.screenings.filter((screening) => screening.id !== screeningId),
+              }
+            : movie,
+        ),
+      );
+    } catch (error) {
+      console.error('Failed to delete screening:', error);
+    }
+  };
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: 'auto' }}>
+    <Box
+      sx={{
+        p: {
+          xs: 2,
+          md: 4,
+        },
+        maxWidth: 1400,
+        mx: 'auto',
+      }}
+    >
+      {/* HEADER */}
+
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
+        direction={{
+          xs: 'column',
+          sm: 'row',
+        }}
         gap={2}
         sx={{
           justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', sm: 'center' },
+          alignItems: {
+            xs: 'stretch',
+            sm: 'center',
+          },
           mb: 3,
         }}
       >
@@ -179,72 +523,108 @@ const MovieListPage = () => {
           <Typography variant="h4" fontWeight={700}>
             Movie List
           </Typography>
+
           <Typography color="text.secondary" mt={0.5}>
             Manage movies, screening times and cinema rooms.
           </Typography>
         </Box>
+
         <Button variant="contained" startIcon={<Add />} onClick={() => setAddingMovie(true)}>
           Add new movie
         </Button>
       </Stack>
 
+      {/* MOVIE LIST */}
+
       <Stack spacing={2}>
         {sortedMovies.map((movie) => {
           const expanded = expandedId === movie.id;
+
           return (
-            <Paper key={movie.id} variant="outlined" sx={{ overflow: 'hidden' }}>
+            <Paper
+              key={movie.id}
+              variant="outlined"
+              sx={{
+                overflow: 'hidden',
+              }}
+            >
               <Box sx={{ p: 2.5 }}>
                 <Stack
-                  direction={{ xs: 'column', lg: 'row' }}
+                  direction={{
+                    xs: 'column',
+                    lg: 'row',
+                  }}
                   spacing={2}
                   sx={{
-                    alignItems: { xs: 'stretch', lg: 'center' },
+                    alignItems: {
+                      xs: 'stretch',
+                      lg: 'center',
+                    },
                   }}
                 >
-                                    <Box sx={{ flex: 1, minWidth: 180 }}>
+                  {/* MOVIE INFO */}
+
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minWidth: 180,
+                    }}
+                  >
                     <Stack
                       direction="row"
-                      gap={1}
+                      gap={2}
                       sx={{
                         alignItems: 'center',
                         flexWrap: 'wrap',
                       }}
                     >
-                      <Box
-                        component="img"
-                        src={movie.image}
-                        alt={movie.title}
-                        sx={{
-                          width: 100,
-                          height: 140,
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                          mr: 2,
-                        }}
-                      />
+                      {movie.image ? (
+                        <Box
+                          component="img"
+                          src={movie.image}
+                          alt={movie.title}
+                          sx={{
+                            width: 100,
+                            height: 140,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 100,
+                            height: 140,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'grey.200',
+                          }}
+                        >
+                          <Typography color="text.secondary">No image</Typography>
+                        </Box>
+                      )}
 
                       <Box>
-                        <Typography variant="h6">
-                          {movie.title}
-                        </Typography>
+                        <Typography variant="h6">{movie.title}</Typography>
 
                         <Chip
                           size="small"
                           label={movie.status}
-                          color={
-                            movie.status === 'Showing'
-                              ? 'success'
-                              : 'default'
-                          }
+                          color={movie.status === 'Showing' ? 'success' : 'default'}
                         />
                       </Box>
                     </Stack>
 
-                    <Typography color="text.secondary" mt={0.5}>
-                      {movie.genre} · {movie.duration} min · Release{' '}
+                    <Typography color="text.secondary" mt={1}>
+                      {movie.genre || 'No genre'} ·{' '}
+                      {movie.duration ? `${movie.duration} min` : 'No duration'} · Release{' '}
                       {movie.releaseDate || '—'}
                     </Typography>
                   </Box>
+
+                  {/* ACTIONS */}
 
                   <Stack
                     direction="row"
@@ -261,20 +641,29 @@ const MovieListPage = () => {
                     >
                       {movie.status === 'Showing' ? 'Take down' : 'Bring back'}
                     </Button>
+
                     <Button
                       size="small"
                       variant="outlined"
                       startIcon={<Edit />}
-                      onClick={() => {
-                        setEditingMovie({ ...movie, screenings: [...movie.screenings] });
-                        setNewScreening({ time: '', room: 'Room 1' });
-                      }}
+                      onClick={() => openModify(movie)}
                     >
                       Modify
                     </Button>
+
                     <Button
                       size="small"
-                      onClick={() => setExpandedId(expanded ? null : movie.id)}
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Delete />}
+                      onClick={() => deleteMovie(movie.id)}
+                    >
+                      Delete
+                    </Button>
+
+                    <Button
+                      size="small"
+                      onClick={() => toggleDetails(movie.id)}
                       endIcon={expanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                     >
                       Details
@@ -282,12 +671,16 @@ const MovieListPage = () => {
                   </Stack>
                 </Stack>
 
+                {/* DETAILS */}
+
                 {expanded && (
                   <>
                     <Divider sx={{ my: 2 }} />
+
                     <Typography fontWeight={700} mb={1}>
                       Screening times & rooms
                     </Typography>
+
                     {movie.screenings.length === 0 ? (
                       <Typography color="text.secondary">No screening time yet.</Typography>
                     ) : (
@@ -298,10 +691,9 @@ const MovieListPage = () => {
                           flexWrap: 'wrap',
                         }}
                       >
-                        {' '}
-                        {movie.screenings.map((screening, index) => (
+                        {movie.screenings.map((screening) => (
                           <Chip
-                            key={`${screening.time}-${screening.room}-${index}`}
+                            key={screening.id}
                             icon={<CalendarMonth />}
                             label={`${screening.time} · ${screening.room}`}
                           />
@@ -316,76 +708,120 @@ const MovieListPage = () => {
         })}
       </Stack>
 
-      <Dialog
-        open={addingMovie}
-        onClose={() => setAddingMovie(false)}
-        fullWidth
-        maxWidth="sm"
-        disableRestoreFocus
-      >
+      {/* ======================================================
+          ADD MOVIE DIALOG
+          ====================================================== */}
+
+      <Dialog open={addingMovie} onClose={() => setAddingMovie(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Add New Movie</DialogTitle>
+
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <TextField
               label="Movie title"
               value={newMovie.title}
-              onChange={(event) => setNewMovie({ ...newMovie, title: event.target.value })}
+              onChange={(event) =>
+                setNewMovie({
+                  ...newMovie,
+                  title: event.target.value,
+                })
+              }
               fullWidth
             />
+
             <TextField
               label="Poster URL"
               placeholder="https://..."
-              value={newMovie.poster}
-              onChange={(event) => setNewMovie({ ...newMovie, poster: event.target.value })}
+              value={newMovie.image}
+              onChange={(event) =>
+                setNewMovie({
+                  ...newMovie,
+                  image: event.target.value,
+                })
+              }
               fullWidth
             />
-            {newMovie.poster && (
+
+            {newMovie.image && (
               <Box
                 component="img"
-                src={newMovie.poster}
+                src={newMovie.image}
                 alt="Poster preview"
-                sx={{ width: 100, height: 140, objectFit: 'cover', borderRadius: 1 }}
+                sx={{
+                  width: 100,
+                  height: 140,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                }}
               />
             )}
+
             <TextField
               label="Genre"
               value={newMovie.genre}
-              onChange={(event) => setNewMovie({ ...newMovie, genre: event.target.value })}
+              onChange={(event) =>
+                setNewMovie({
+                  ...newMovie,
+                  genre: event.target.value,
+                })
+              }
               fullWidth
             />
+
             <TextField
               label="Duration (minutes)"
               type="number"
               value={newMovie.duration}
               onChange={(event) =>
-                setNewMovie({ ...newMovie, duration: Number(event.target.value) })
+                setNewMovie({
+                  ...newMovie,
+                  duration: Number(event.target.value),
+                })
               }
               fullWidth
             />
+
             <TextField
               label="Release date"
               type="date"
               value={newMovie.releaseDate}
-              onChange={(event) => setNewMovie({ ...newMovie, releaseDate: event.target.value })}
-              slotProps={{ inputLabel: { shrink: true } }}
+              onChange={(event) =>
+                setNewMovie({
+                  ...newMovie,
+                  releaseDate: event.target.value,
+                })
+              }
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
+              }}
               fullWidth
             />
           </Stack>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setAddingMovie(false)}>Cancel</Button>
+
           <Button variant="contained" onClick={addMovie} disabled={!newMovie.title.trim()}>
             Add movie
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* ======================================================
+          MODIFY MOVIE DIALOG
+          ====================================================== */}
+
       <Dialog
-        open={Boolean(editingMovie)}
+        open={editingMovie !== null}
         onClose={() => setEditingMovie(null)}
         fullWidth
-        maxWidth="md"
-        disableRestoreFocus
+        maxWidth="sm"
       >
+        <DialogTitle>Modify Movie</DialogTitle>
+
         <DialogContent>
           {editingMovie && (
             <Stack spacing={2} mt={1}>
@@ -393,139 +829,199 @@ const MovieListPage = () => {
                 label="Movie title"
                 value={editingMovie.title}
                 onChange={(event) =>
-                  setEditingMovie({ ...editingMovie, title: event.target.value })
+                  setEditingMovie({
+                    ...editingMovie,
+                    title: event.target.value,
+                  })
                 }
                 fullWidth
               />
+
               <TextField
                 label="Poster URL"
-                placeholder="https://..."
-                value={editingMovie.poster}
+                value={editingMovie.image}
                 onChange={(event) =>
-                  setEditingMovie({ ...editingMovie, poster: event.target.value })
+                  setEditingMovie({
+                    ...editingMovie,
+                    image: event.target.value,
+                  })
                 }
                 fullWidth
               />
-              {editingMovie.poster && (
+
+              {editingMovie.image && (
                 <Box
                   component="img"
-                  src={editingMovie.poster}
+                  src={editingMovie.image}
                   alt={editingMovie.title}
-                  sx={{ width: 100, height: 140, objectFit: 'cover', borderRadius: 1 }}
+                  sx={{
+                    width: 100,
+                    height: 140,
+                    objectFit: 'cover',
+                    borderRadius: 1,
+                  }}
                 />
               )}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Genre"
-                  value={editingMovie.genre}
-                  onChange={(event) =>
-                    setEditingMovie({ ...editingMovie, genre: event.target.value })
-                  }
-                  fullWidth
-                />
-                <TextField
-                  label="Duration (minutes)"
-                  type="number"
-                  value={editingMovie.duration}
-                  onChange={(event) =>
-                    setEditingMovie({ ...editingMovie, duration: Number(event.target.value) })
-                  }
-                  fullWidth
-                />
-              </Stack>
+
+              <TextField
+                label="Genre"
+                value={editingMovie.genre}
+                onChange={(event) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    genre: event.target.value,
+                  })
+                }
+                fullWidth
+              />
+
+              <TextField
+                label="Duration (minutes)"
+                type="number"
+                value={editingMovie.duration}
+                onChange={(event) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    duration: Number(event.target.value),
+                  })
+                }
+                fullWidth
+              />
+
               <TextField
                 label="Release date"
                 type="date"
                 value={editingMovie.releaseDate}
                 onChange={(event) =>
-                  setEditingMovie({ ...editingMovie, releaseDate: event.target.value })
+                  setEditingMovie({
+                    ...editingMovie,
+                    releaseDate: event.target.value,
+                  })
                 }
-                slotProps={{ inputLabel: { shrink: true } }}
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                }}
                 fullWidth
               />
 
+              {/* SCREENINGS */}
+
               <Divider />
-              <Typography fontWeight={700}>Screening times & rooms</Typography>
-              {editingMovie.screenings.map((screening, index) => (
-                <Stack
-                  key={`${screening.time}-${screening.room}-${index}`}
-                  direction="row"
-                  spacing={1}
-                >
-                  <TextField
-                    label="Time"
-                    type="time"
-                    value={screening.time}
-                    onChange={(event) => {
-                      const screenings = [...editingMovie.screenings];
-                      screenings[index] = { ...screenings[index], time: event.target.value };
-                      setEditingMovie({ ...editingMovie, screenings });
-                    }}
-                    slotProps={{ inputLabel: { shrink: true } }}
-                  />
-                  <FormControl sx={{ minWidth: 140 }}>
-                    <InputLabel>Room</InputLabel>
-                    <Select
-                      label="Room"
-                      value={screening.room}
-                      onChange={(event) => {
-                        const screenings = [...editingMovie.screenings];
-                        screenings[index] = { ...screenings[index], room: event.target.value };
-                        setEditingMovie({ ...editingMovie, screenings });
+
+              <Typography variant="h6" fontWeight={700}>
+                Screening times & rooms
+              </Typography>
+
+              {editingMovie.screenings.length === 0 ? (
+                <Typography color="text.secondary">No screening time yet.</Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {editingMovie.screenings.map((screening) => (
+                    <Stack
+                      key={screening.id}
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: 'center',
                       }}
                     >
-                      <MenuItem value="Room 1">Room 1</MenuItem>
-                      <MenuItem value="Room 2">Room 2</MenuItem>
-                      <MenuItem value="Room 3">Room 3</MenuItem>
-                      <MenuItem value="Room 4">Room 4</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <Button color="error" onClick={() => removeScreening(index)}>
-                    Remove
-                  </Button>
+                      <Chip
+                        icon={<CalendarMonth />}
+                        label={`${screening.time} · ${screening.room}`}
+                      />
+
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => removeScreening(screening.id)}
+                      >
+                        Remove
+                      </Button>
+                    </Stack>
+                  ))}
                 </Stack>
-              ))}
+              )}
+
+              {/* ADD SCREENING */}
 
               <Stack
-                direction={{ xs: 'column', sm: 'row' }}
+                direction={{
+                  xs: 'column',
+                  sm: 'row',
+                }}
                 spacing={1}
-                sx={{ alignItems: 'stretch' }}
+                sx={{
+                  alignItems: {
+                    xs: 'stretch',
+                    sm: 'center',
+                  },
+                }}
               >
                 <TextField
-                  label="New time"
+                  label="Time"
                   type="time"
                   value={newScreening.time}
                   onChange={(event) =>
-                    setNewScreening({ ...newScreening, time: event.target.value })
+                    setNewScreening({
+                      ...newScreening,
+                      time: event.target.value,
+                    })
                   }
-                  slotProps={{ inputLabel: { shrink: true } }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
                 />
-                <FormControl sx={{ minWidth: 140 }}>
-                  <InputLabel>Room</InputLabel>
-                  <Select
-                    label="Room"
-                    value={newScreening.room}
-                    onChange={(event) =>
-                      setNewScreening({ ...newScreening, room: event.target.value })
-                    }
-                  >
-                    <MenuItem value="Room 1">Room 1</MenuItem>
-                    <MenuItem value="Room 2">Room 2</MenuItem>
-                    <MenuItem value="Room 3">Room 3</MenuItem>
-                    <MenuItem value="Room 4">Room 4</MenuItem>
-                  </Select>
-                </FormControl>
-                <Button variant="outlined" startIcon={<PlayArrow />} onClick={addScreening}>
-                  Add screening
+
+                <Select
+                  value={newScreening.room}
+                  onChange={(event) =>
+                    setNewScreening({
+                      ...newScreening,
+                      room: event.target.value,
+                    })
+                  }
+                  sx={{
+                    minWidth: 140,
+                  }}
+                >
+                  <MenuItem value="Room 1">Room 1</MenuItem>
+
+                  <MenuItem value="Room 2">Room 2</MenuItem>
+
+                  <MenuItem value="Room 3">Room 3</MenuItem>
+
+                  <MenuItem value="Room 4">Room 4</MenuItem>
+                </Select>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={addScreening}
+                  disabled={!newScreening.time}
+                >
+                  Add Screening
                 </Button>
               </Stack>
             </Stack>
           )}
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setEditingMovie(null)}>Cancel</Button>
-          <Button variant="contained" onClick={() => editingMovie && updateMovie(editingMovie)}>
-            Save changes
+
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (editingMovie) {
+                updateMovie(editingMovie);
+              }
+            }}
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
