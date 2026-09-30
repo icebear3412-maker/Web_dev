@@ -1,18 +1,31 @@
+import '@fontsource/be-vietnam-pro/400.css';
+import '@fontsource/be-vietnam-pro/500.css';
+import '@fontsource/be-vietnam-pro/700.css';
+import '@fontsource/be-vietnam-pro/800.css';
+
 import { createTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 
-export const theme = createTheme({
+export const CONTENT_MAX_WIDTH = 980;
+
+export const landingPageTheme = createTheme({
   palette: {
     primary: { main: '#e71a0f' },
   },
   typography: {
+    fontFamily: '"Be Vietnam Pro", "Roboto", "Helvetica", "Arial", sans-serif',
     button: { textTransform: 'none', fontWeight: 700 },
+  },
+  components: {
+    MuiContainer: {
+      defaultProps: { maxWidth: false,  disableGutters: true  },
+      styleOverrides: { root: { maxWidth: CONTENT_MAX_WIDTH } },
+    },
   },
 });
 
 // Shared sx presets. `satisfies` keeps them as plain objects so they can be
 // spread or used in sx arrays: sx={[sectionSx, { py: 2 }]}
-
 export const sectionSx = {
   py: { xs: 3, md: 5 },
 } satisfies SxProps<Theme>;

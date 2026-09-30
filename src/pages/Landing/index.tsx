@@ -9,14 +9,14 @@ import PartnerLine from '@/pages/Landing/Partner';
 
 const FrontPage: React.FC = () => {
   return (
-    <div className="cgv-page">
+    <>
       <QuickLinks />
       <HeroSection />
       <MovieSection />
       <EventSection />
       <CinemaRoomBanner />
       <PartnerLine />
-    </div>
+    </>
   );
 };
 

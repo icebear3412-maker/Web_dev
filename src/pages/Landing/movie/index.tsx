@@ -1,4 +1,4 @@
-import { Box, Button, Card, Container, Typography } from '@mui/material';
+import { Box, Button, Card, Container, ThemeProvider, Typography } from '@mui/material';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 
@@ -6,7 +6,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import type { IMovieCard } from '@/types';
 import { useNavigate } from 'react-router-dom';
-import { sectionHeadingSx, sectionSx, sectionTitleSx } from '@/theme';
+import { landingPageTheme, sectionHeadingSx, sectionSx, sectionTitleSx } from '@/theme';
 
 const Movies: IMovieCard[] = [
   {
@@ -49,84 +49,81 @@ const Movies: IMovieCard[] = [
 const Movie: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <Box component="section" sx={sectionSx}>
-      <Container maxWidth="lg">
-        <Box sx={sectionHeadingSx}>
-          <Typography sx={sectionTitleSx}>PHIM ĐANG CHIẾU</Typography>
-          <Button sx={{ color: 'primary.main' }}>XEM TẤT CẢ →</Button>
-        </Box>
+    <ThemeProvider theme={landingPageTheme}>
+      <Box component="section" sx={sectionSx}>
+        <Container>
+          <Box sx={sectionHeadingSx}>
+            <Typography sx={sectionTitleSx}>PHIM ĐANG CHIẾU</Typography>
+            <Button sx={{ color: 'primary.main' }}>XEM TẤT CẢ →</Button>
+          </Box>
 
-        <Swiper
-          modules={[Navigation]}
-          navigation
-          spaceBetween={18}
-          slidesPerView={4}
-          breakpoints={{
-            0: { slidesPerView: 1.2 },
-            600: { slidesPerView: 2 },
-            900: { slidesPerView: 3 },
-            1200: { slidesPerView: 4 },
-          }}
-        >
-          {Movies.map((movie) => (
-            <SwiperSlide key={movie.title}>
-              <Card sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    aspectRatio: '2 / 3',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundImage: `url(${movie.image})`,
-                    '& .MuiButton-root': {
-                      opacity: 0,
-                      transition: 'opacity 0.2s ease-out',
-                      '@media (hover: none)': { opacity: 1 },
-                    },
-                    '&:hover .MuiButton-root, &:focus-within .MuiButton-root': { opacity: 1 },
-                  }}
-                >
+          <Swiper
+            modules={[Navigation]}
+            navigation
+            spaceBetween={18}
+            slidesPerView={4}
+            breakpoints={{
+              0: { slidesPerView: 1.2 },
+              600: { slidesPerView: 2 },
+              900: { slidesPerView: 3 },
+              1200: { slidesPerView: 4 },
+            }}
+          >
+            {Movies.map((movie) => (
+              <SwiperSlide key={movie.title}>
+                <Card sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
                   <Box
-                    component="span"
                     sx={{
-                      position: 'absolute',
-                      top: 8,
-                      left: 8,
-                      px: 1,
-                      py: 0.25,
-                      borderRadius: 1,
-                      bgcolor: 'primary.main',
-                      color: 'common.white',
-                      fontSize: 12,
-                      fontWeight: 700,
+                      position: 'relative',
+                      aspectRatio: '2 / 3',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundImage: `url(${movie.image})`,
+                      '& .MuiButton-root': {
+                        opacity: 0,
+                        transition: 'opacity 0.2s ease-out',
+                        '@media (hover: none)': { opacity: 1 },
+                      },
+                      '&:hover .MuiButton-root, &:focus-within .MuiButton-root': { opacity: 1 },
                     }}
                   >
-                    {movie.age}
+                    <Box
+                      component="span"
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 1,
+                        bgcolor: 'primary.main',
+                        color: 'common.white',
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {movie.age}
+                    </Box>
+
+                    <Button
+                      variant="contained"
+                      onClick={() => movie.linkTo && navigate(movie.linkTo)}
+                      sx={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)' }}
+                    >
+                      MUA VÉ
+                    </Button>
                   </Box>
 
-                  <Button
-                    variant="contained"
-                    onClick={() => movie.linkTo && navigate(movie.linkTo)}
-                    sx={{
-                      position: 'absolute',
-                      bottom: 12,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                    }}
-                  >
-                    MUA VÉ
-                  </Button>
-                </Box>
-
-                <Typography sx={{ mt: 1, fontWeight: 700 }}>{movie.title}</Typography>
-              </Card>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </Container>
-    </Box>
+                  <Typography sx={{ mt: 1, fontWeight: 700 }}>{movie.title}</Typography>
+                </Card>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
 };
 

@@ -1,5 +1,6 @@
+import { landingPageTheme } from '@/theme';
 import type { ICardWithLink } from '@/types';
-import { Box, Divider, Stack } from '@mui/material';
+import { Box, Container, Divider, Stack, ThemeProvider } from '@mui/material';
 import type React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,48 +18,51 @@ const NavigationBar: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Box
-      sx={{
-        borderTop: '1px solid',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        py: 2,
-        overflowX: { xs: 'auto', md: 'visible' },
-      }}
-    >
-      <Stack
-        direction="row"
-        divider={<Divider orientation="vertical" flexItem sx={{ mx: { xs: 1, md: 2 } }} />}
-        sx={{ alignItems: 'center', justifyContent: 'center', minWidth: 'fit-content', px: 2 }}
+    <ThemeProvider theme={landingPageTheme}>
+      <Container
+        sx={{
+          borderTop: '1px solid',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          py: 2,
+          overflowX: 'auto',
+        }}
       >
-        {navItems.map((item) => (
-          <Box
-            key={item.linkTo}
-            onClick={() => navigate(item.linkTo)}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              flexShrink: 0,
-              width: { xs: 100, md: 130 },
-              cursor: 'pointer',
-            }}
-          >
+        <Stack
+          direction="row"
+          divider={<Divider orientation="vertical" flexItem sx={{ mx: { xs: 1, md: 2 } }} />}
+          sx={{ alignItems: 'center', justifyContent: 'center', minWidth: 'fit-content', px: 2 }}
+        >
+          {navItems.map((item) => (
             <Box
-              component="img"
-              src={item.image}
-              alt={item.linkTo}
+              key={item.linkTo}
+              onClick={() => navigate(item.linkTo)}
               sx={{
-                width: 56,
-                height: 56,
-                objectFit: 'contain',
-                transition: 'transform 0.2s ease-out',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                flexShrink: 0,
+                // 7 items + 6 dividers fit inside the 980px column without scrolling at md+
+                width: 96,
+                cursor: 'pointer',
               }}
-            />
-          </Box>
-        ))}
-      </Stack>
-    </Box>
+            >
+              <Box
+                component="img"
+                src={item.image}
+                alt={item.linkTo}
+                sx={{
+                  width: 56,
+                  height: 56,
+                  objectFit: 'contain',
+                  transition: 'transform 0.2s ease-out',
+                }}
+              />
+            </Box>
+          ))}
+        </Stack>
+      </Container>
+    </ThemeProvider>
   );
 };
 

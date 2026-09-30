@@ -1,6 +1,7 @@
-import { Box, ButtonBase, Typography } from '@mui/material';
+import { Box, ButtonBase, ThemeProvider, Typography } from '@mui/material';
 import type React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CONTENT_MAX_WIDTH, landingPageTheme } from '@/theme';
 
 interface SideBanner {
   label: string;
@@ -15,13 +16,14 @@ const sideBanners: SideBanner[] = [
 
 const BANNER_WIDTH = 120;
 const BANNER_OFFSET = 16;
-const MIN_VIEWPORT = 1536 + 2 * (BANNER_WIDTH + BANNER_OFFSET);
+
+const MIN_VIEWPORT = CONTENT_MAX_WIDTH + 2 * (BANNER_WIDTH + BANNER_OFFSET);
 
 const SideBanners: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <>
+    <ThemeProvider theme={landingPageTheme}>
       {sideBanners.map((banner, index) => (
         <ButtonBase
           key={banner.linkTo}
@@ -48,6 +50,7 @@ const SideBanners: React.FC = () => {
               sx={{ display: 'block', width: '100%', borderRadius: 2, boxShadow: 3 }}
             />
           ) : (
+            // fallback until the real image is added
             <Box
               sx={{
                 display: 'grid',
@@ -65,7 +68,7 @@ const SideBanners: React.FC = () => {
           )}
         </ButtonBase>
       ))}
-    </>
+    </ThemeProvider>
   );
 };
 
