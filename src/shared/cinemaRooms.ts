@@ -1,5 +1,5 @@
 import type { CinemaRoom } from '@/types/cinema';
-// Frontend view data: map the backend city_id to its city name when integrating the API.
+// Frontend view data: resolve room.cinema_id to cinemas.city when integrating the API.
 export const cities = ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng'];
 export const emptyRooms: CinemaRoom[] = [];
 export function roomTypesForCity(rooms: CinemaRoom[], city: string) {

@@ -1,6 +1,5 @@
-import { localDate } from '@/helpers/date';
-import { cities, emptyRooms, roomTypesForCity } from '@/shared/cinemaRooms';
-import type { CinemaRoom, RentalForm } from '@/types/cinema';
+import type { RentalForm } from '@/types/cinema';
+
 export const services = [
   {
     name: 'Group Booking',
@@ -81,32 +80,3 @@ export const emptyForm: RentalForm = {
   roomType: '',
   note: '',
 };
-export function validateRental(
-  form: RentalForm,
-  rooms: CinemaRoom[] = emptyRooms,
-): Partial<Record<keyof RentalForm, string>> {
-  const errors: Partial<Record<keyof RentalForm, string>> = {};
-  if (form.name.trim().length < 2) errors.name = 'Nhập họ tên từ 2 ký tự.';
-  if (!/^(0\d{9}|\+84\d{9})$/.test(form.phone.replace(/[\s.-]/g, '')))
-    errors.phone = 'Nhập số điện thoại Việt Nam hợp lệ.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-    errors.email = 'Nhập địa chỉ email hợp lệ.';
-  if (!form.address.trim()) errors.address = 'Nhập địa chỉ liên hệ.';
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(form.date) ||
-    Number.isNaN(Date.parse(form.date)) ||
-    new Date(form.date).toISOString().slice(0, 10) !== form.date ||
-    form.date < localDate(new Date())
-  )
-    errors.date = 'Chọn hôm nay hoặc một ngày trong tương lai.';
-  const guests = Number(form.guests);
-  if (!Number.isInteger(guests) || guests < 1 || guests > 500)
-    errors.guests = 'Nhập số khách từ 1 đến 500.';
-  else if (form.service === 'Group Booking' && guests < 20)
-    errors.guests = 'Xem phim theo nhóm dành cho ít nhất 20 khách.';
-  if (!cities.includes(form.city)) errors.city = 'Chọn khu vực tổ chức.';
-  if (!roomTypesForCity(rooms, form.city).includes(form.roomType))
-    errors.roomType = 'Chọn loại phòng phù hợp với thành phố.';
-  if (!services.some((service) => service.name === form.service)) errors.service = 'Chọn dịch vụ.';
-  return errors;
-}

@@ -34,3 +34,6 @@ src/be/instance/
 !.env.example
 *.sqlite
 *.sqlite3
+
+# This project uses Yarn.
+package-lock.json
