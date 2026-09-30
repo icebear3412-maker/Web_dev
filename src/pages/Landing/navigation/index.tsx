@@ -8,7 +8,7 @@ const navItems: ICardWithLink[] = [
   { image: '/icons/cinemas.png', linkTo: '/cinemas' },
   { image: '/icons/now-showing.png', linkTo: '/now-showing' },
   { image: '/icons/special.png', linkTo: '/special' },
-  { image: '/icons/hall-rental.png', linkTo: '/hall-rental' },
+  { image: '/icons/hall-rental.png', linkTo: '/rent' },
   { image: '/icons/contact.png', linkTo: '/contact' },
   { image: '/icons/news-offers.png', linkTo: '/news-offers' },
   { image: '/icons/register.png', linkTo: '/register' },

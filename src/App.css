@@ -17,7 +17,7 @@
   }
 }
 
-.hero {
+.carousel {
   position: relative;
 
   .base,
@@ -181,7 +181,7 @@
   }
 }
 
-.hero-layout .side-banner {
+.carousel-layout .side-banner {
   background: transparent !important;
   border: 0 !important;
   outline: 0 !important;
@@ -191,7 +191,7 @@
   border-radius: 0 !important;
 }
 
-.hero-layout .side-banner img {
+.carousel-layout .side-banner img {
   display: block !important;
   width: 100% !important;
   height: 100% !important;

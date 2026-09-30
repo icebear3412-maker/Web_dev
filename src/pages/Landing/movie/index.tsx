@@ -1,130 +1,100 @@
-import { Box, Button, Card, Container, ThemeProvider, Typography } from '@mui/material';
+import { Alert, Box, Button, Container, Snackbar, Typography } from '@mui/material';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
-
 import 'swiper/css';
 import 'swiper/css/navigation';
-import type { IMovieCard } from '@/types';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { landingPageTheme, sectionHeadingSx, sectionSx, sectionTitleSx } from '@/theme';
+import type { Movie } from '@/services/movies';
+import { localMoviePosters } from '@/services/moviePosters';
+import { clickableSx } from '@/theme';
 
-const Movies: IMovieCard[] = [
-  {
-    title: 'The Amazing Spider-man 3',
-    age: 16,
-    linkTo: '',
-    image:
-      'https://preview.redd.it/r-i-p-the-amazing-spider-man-3-it-was-supposed-to-come-out-v0-b5vq82ipje481.jpg?auto=webp&s=bb3494bedc087b8862a50bebe6b9b2da20ea87da',
-  },
-  {
-    title: 'MA TÙ',
-    age: 16,
-    linkTo: '',
-    image:
-      'https://static-cgv.vncdn.vn/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/4/7/470x700-cell.jpg',
-  },
-  {
-    title: 'VÙNG ĐẤT QUỶ DỮ',
-    age: 18,
-    linkTo: '',
-    image:
-      'https://static-cgv.vncdn.vn/media/catalog/product/cache/1/image/c5f0a1eff4c394a251036189ccddaacd/4/7/470x700-residentevil_1.jpg',
-  },
-  {
-    title: 'NGHỈ HÈ SỢ NGHỈ HƯU',
-    age: 13,
-    linkTo: '',
-    image:
-      'https://static-cgv.vncdn.vn/media/catalog/product/cache/1/image/c5f0a1eff4c394a251036189ccddaacd/z/8/z8075966316749_9fe6a8561d68d468b30c090e068011b7.jpg',
-  },
-  {
-    title: 'Chiikawa bí mật đảo người cá',
-    age: 12,
-    linkTo: '',
-    image:
-      'https://upload.wikimedia.org/wikipedia/vi/0/07/Chiikawa_movie_poster_Vietnam.jpg?utm_source=vi.wikipedia.org&utm_campaign=index&utm_content=original',
-  },
-];
+interface MovieSectionProps {
+  movies: Movie[];
+}
 
-const Movie: React.FC = () => {
+const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
   const navigate = useNavigate();
-  return (
-    <ThemeProvider theme={landingPageTheme}>
-      <Box component="section" sx={sectionSx}>
-        <Container>
-          <Box sx={sectionHeadingSx}>
-            <Typography sx={sectionTitleSx}>PHIM ĐANG CHIẾU</Typography>
-            <Button sx={{ color: 'primary.main' }}>XEM TẤT CẢ →</Button>
-          </Box>
+  const [trailerNotice, setTrailerNotice] = useState(false);
+  const displayMovies = localMoviePosters.map((poster, index) => {
+    const movie = movies[index]?.poster ? movies[index] : undefined;
+    return {
+      ...poster,
+      ...movie,
+      id: movie?.id ?? poster.id,
+      poster: movie?.poster || poster.poster,
+      title: movie?.title ?? poster.title,
+      title_vn: movie?.title_vn ?? poster.title_vn,
+      age_rating: movie?.age_rating ?? poster.age_rating,
+      trailer_url: movie?.trailer_url ?? poster.trailer_url,
+    };
+  });
 
+  const getMovieUrl = (movie: Movie) => `/movies/${encodeURIComponent(movie.id)}`;
+
+  return (
+    <section className="content-section" id="now-showing">
+      <Container maxWidth="lg">
+        <Typography className="section-title">PHIM ĐANG CHIẾU</Typography>
+        {displayMovies.length === 0 ? (
+          <Typography className="empty-movies">Chưa có poster phim để hiển thị.</Typography>
+        ) : (
           <Swiper
+            className="movie-carousel"
             modules={[Navigation]}
             navigation
-            spaceBetween={18}
+            spaceBetween={8}
             slidesPerView={4}
-            breakpoints={{
-              0: { slidesPerView: 1.2 },
-              600: { slidesPerView: 2 },
-              900: { slidesPerView: 3 },
-              1200: { slidesPerView: 4 },
-            }}
+            breakpoints={{ 0: { slidesPerView: 1.2 }, 600: { slidesPerView: 2 }, 900: { slidesPerView: 3 }, 1200: { slidesPerView: 4 } }}
           >
-            {Movies.map((movie) => (
-              <SwiperSlide key={movie.title}>
-                <Card sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      aspectRatio: '2 / 3',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundImage: `url(${movie.image})`,
-                      '& .MuiButton-root': {
-                        opacity: 0,
-                        transition: 'opacity 0.2s ease-out',
-                        '@media (hover: none)': { opacity: 1 },
-                      },
-                      '&:hover .MuiButton-root, &:focus-within .MuiButton-root': { opacity: 1 },
-                    }}
-                  >
-                    <Box
-                      component="span"
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        left: 8,
-                        px: 1,
-                        py: 0.25,
-                        borderRadius: 1,
-                        bgcolor: 'primary.main',
-                        color: 'common.white',
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {movie.age}
+            {displayMovies.map((movie) => {
+              const title = movie.title_vn || movie.title;
+              const movieUrl = getMovieUrl(movie);
+              return (
+                <SwiperSlide key={movie.id}>
+                  <Box className="movie-card" sx={clickableSx}>
+                    <Box className="movie-poster-frame">
+                      <Box
+                        component="img"
+                        className="movie-poster-image"
+                        src={movie.poster || undefined}
+                        alt={title || 'Poster phim'}
+                        loading="lazy"
+                      />
+                      {movie.age_rating && <span className="age-badge">{movie.age_rating}</span>}
+                      <Box className="movie-poster-overlay">
+                        {title && <Typography className="movie-overlay-title">{title}</Typography>}
+                        <Button
+                          className="movie-play-button"
+                          aria-label={title ? `Xem trailer ${title}` : 'Xem trailer phim'}
+                          onClick={() => movie.trailer_url ? window.open(movie.trailer_url, '_blank', 'noopener,noreferrer') : setTrailerNotice(true)}
+                        >
+                          <PlayArrowRoundedIcon />
+                          <span>PLAY</span>
+                        </Button>
+                        <Box className="movie-actions">
+                          <Button className="movie-detail-button" onClick={() => navigate(movieUrl)}>XEM CHI TIẾT</Button>
+                          <Button className="movie-buy-button" onClick={() => navigate(movieUrl)}>
+                            <ConfirmationNumberOutlinedIcon /> MUA VÉ
+                          </Button>
+                        </Box>
+                      </Box>
                     </Box>
-
-                    <Button
-                      variant="contained"
-                      onClick={() => movie.linkTo && navigate(movie.linkTo)}
-                      sx={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)' }}
-                    >
-                      MUA VÉ
-                    </Button>
+                    {title && <Typography className="movie-title">{title}</Typography>}
                   </Box>
-
-                  <Typography sx={{ mt: 1, fontWeight: 700 }}>{movie.title}</Typography>
-                </Card>
-              </SwiperSlide>
-            ))}
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
-        </Container>
-      </Box>
-    </ThemeProvider>
+        )}
+        <Snackbar open={trailerNotice} autoHideDuration={2800} onClose={() => setTrailerNotice(false)}>
+          <Alert severity="info" onClose={() => setTrailerNotice(false)}>Trailer phim chưa được cập nhật.</Alert>
+        </Snackbar>
+      </Container>
+    </section>
   );
 };
 
-export default Movie;
+export default MovieSection;
