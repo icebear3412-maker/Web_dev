@@ -6,7 +6,7 @@ from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
 #Load private local settings before building the PostgreSQL connection address.
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT_DIR / ".env")
 
 def get_database_url():
