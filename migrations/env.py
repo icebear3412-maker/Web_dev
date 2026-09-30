@@ -12,13 +12,23 @@ config = context.config
 #Use the same private configuration as the Flask application.
 ROOT_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT_DIR / ".env")
+
 database_url = os.environ.get("DATABASE_URL")
+
 if database_url:
     # The application uses psycopg2-binary. Be explicit so SQLAlchemy does not
     # select the separate psycopg package when a generic PostgreSQL URL is set.
     if database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
-    config.set_main_option("sqlalchemy.url", database_url)
+        database_url = database_url.replace(
+            "postgresql://",
+            "postgresql+psycopg2://",
+            1,
+        )
+
+    config.set_main_option(
+        "sqlalchemy.url",
+        database_url,
+    )
 
 #Migrations are written explicitly because this project uses psycopg2 queries,
 #not SQLAlchemy models to generate schema metadata from.
@@ -45,7 +55,10 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+        )
 
         with context.begin_transaction():
             context.run_migrations()
