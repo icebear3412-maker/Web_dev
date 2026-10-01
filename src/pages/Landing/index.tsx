@@ -19,7 +19,8 @@ const FrontPage: React.FC = () => {
     fetchMovies(controller.signal)
       .then(setMovies)
       .catch((error: unknown) => {
-        if (!controller.signal.aborted) setMovieError(error instanceof Error ? error.message : 'Không tải được phim.');
+        if (!controller.signal.aborted)
+          setMovieError(error instanceof Error ? error.message : 'Không tải được phim.');
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -32,8 +33,16 @@ const FrontPage: React.FC = () => {
       <SideBanners />
       <QuickLinks />
       <CarouselSection movies={movies} />
-      {movieError && <Alert severity="warning" className="api-message">{movieError}</Alert>}
-      {loading && <Box className="api-loading"><CircularProgress size={24} /> Đang tải phim…</Box>}
+      {movieError && (
+        <Alert severity="warning" className="api-message">
+          {movieError}
+        </Alert>
+      )}
+      {loading && (
+        <Box className="api-loading">
+          <CircularProgress size={24} /> Đang tải phim…
+        </Box>
+      )}
       <MovieSection movies={movies} />
       <EventSection />
       <PartnerLine />

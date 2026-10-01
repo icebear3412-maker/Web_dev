@@ -44,7 +44,13 @@ const QuickLinks: React.FC = () => {
               component="img"
               src={card.image}
               alt={card.label}
-              sx={{ display: 'block', width: 'auto', height: 100, maxWidth: '100%', objectFit: 'contain' }}
+              sx={{
+                display: 'block',
+                width: 'auto',
+                height: 100,
+                maxWidth: '100%',
+                objectFit: 'contain',
+              }}
             />
           </Box>
         ))}

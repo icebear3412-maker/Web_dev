@@ -20,9 +20,16 @@ const PartnerLine: React.FC = () => {
   return (
     <Box component="section" className="partners-section" sx={sectionSx}>
       <Container maxWidth="lg">
-
         <Box className="partners-row">
-          {Partners.map((partner) => <Box className="partner-logo" component="img" key={partner.name} src={createWordmark(partner.name, partner.color)} alt={partner.name} />)}
+          {Partners.map((partner) => (
+            <Box
+              className="partner-logo"
+              component="img"
+              key={partner.name}
+              src={createWordmark(partner.name, partner.color)}
+              alt={partner.name}
+            />
+          ))}
         </Box>
       </Container>
     </Box>

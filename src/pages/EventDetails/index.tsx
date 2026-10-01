@@ -10,15 +10,23 @@ const EventDetails: React.FC = () => {
   return (
     <main className="movie-detail-page">
       <Container maxWidth="md">
-        <Button className="movie-detail-back" onClick={() => navigate('/#member-events')}>← QUAY LẠI SỰ KIỆN</Button>
-        {event ? <Box className="event-detail-card">
-          <img src={event.image} alt={event.title} />
-          <Box className="event-detail-copy">
-            <Typography className="movie-detail-kicker">SỰ KIỆN THÀNH VIÊN</Typography>
-            <Typography component="h1" className="movie-detail-title">{event.title}</Typography>
-            <Typography>{event.text}</Typography>
+        <Button className="movie-detail-back" onClick={() => navigate('/#member-events')}>
+          ← QUAY LẠI SỰ KIỆN
+        </Button>
+        {event ? (
+          <Box className="event-detail-card">
+            <img src={event.image} alt={event.title} />
+            <Box className="event-detail-copy">
+              <Typography className="movie-detail-kicker">SỰ KIỆN THÀNH VIÊN</Typography>
+              <Typography component="h1" className="movie-detail-title">
+                {event.title}
+              </Typography>
+              <Typography>{event.text}</Typography>
+            </Box>
           </Box>
-        </Box> : <Typography>Không tìm thấy sự kiện này.</Typography>}
+        ) : (
+          <Typography>Không tìm thấy sự kiện này.</Typography>
+        )}
       </Container>
     </main>
   );

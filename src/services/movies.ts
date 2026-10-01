@@ -13,7 +13,10 @@ export interface Movie {
   trailer_url?: string | null;
 }
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:2000').replace(/\/$/, '');
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:2000').replace(
+  /\/$/,
+  '',
+);
 
 export async function fetchMovies(signal?: AbortSignal): Promise<Movie[]> {
   const response = await fetch(`${API_BASE_URL}/movies?status=showing`, { signal });
@@ -59,9 +62,17 @@ export interface PublicBooking {
   seats: Array<{ seat_code: string }>;
 }
 
-export async function fetchPublicBooking(reference: string, signal?: AbortSignal): Promise<PublicBooking> {
-  const response = await fetch(`${API_BASE_URL}/bookings/check/${encodeURIComponent(reference)}`, { signal });
-  const payload = (await response.json().catch(() => ({}))) as { booking?: PublicBooking; error?: string };
+export async function fetchPublicBooking(
+  reference: string,
+  signal?: AbortSignal,
+): Promise<PublicBooking> {
+  const response = await fetch(`${API_BASE_URL}/bookings/check/${encodeURIComponent(reference)}`, {
+    signal,
+  });
+  const payload = (await response.json().catch(() => ({}))) as {
+    booking?: PublicBooking;
+    error?: string;
+  };
   if (!response.ok || !payload.booking) throw new Error(payload.error || 'Không tìm thấy vé.');
   return payload.booking;
 }

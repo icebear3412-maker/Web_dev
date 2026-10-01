@@ -35,7 +35,9 @@ const HeaderComponent: React.FC = () => {
           <Button onClick={() => navigate('/#member-events')}>THÀNH VIÊN</Button>
           <Button onClick={() => navigate('/#member-events')}>SỰ KIỆN</Button>
         </nav>
-        <Button className="buy-ticket-button" onClick={() => navigate('/#now-showing')}>MUA VÉ NGAY</Button>
+        <Button className="buy-ticket-button" onClick={() => navigate('/#now-showing')}>
+          MUA VÉ NGAY
+        </Button>
       </Container>
       <div className="film-divider" />
     </header>

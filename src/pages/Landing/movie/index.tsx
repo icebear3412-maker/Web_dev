@@ -1,6 +1,15 @@
-import { Alert, Box, Button, Container, Dialog, DialogContent, IconButton, Snackbar, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  Dialog,
+  DialogContent,
+  IconButton,
+  Snackbar,
+  Typography,
+} from '@mui/material';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
-import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
@@ -19,7 +28,9 @@ interface MovieSectionProps {
 const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
   const navigate = useNavigate();
   const [trailerNotice, setTrailerNotice] = useState(false);
-  const [activeTrailer, setActiveTrailer] = useState<{ title: string; embedUrl: string } | null>(null);
+  const [activeTrailer, setActiveTrailer] = useState<{ title: string; embedUrl: string } | null>(
+    null,
+  );
   const displayMovies = localMoviePosters.map((poster, index) => {
     const movie = movies[index]?.poster ? movies[index] : undefined;
     return {
@@ -40,16 +51,22 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
     if (!url) return null;
     const value = url.trim();
     const videoIdPattern = /^[\w-]{11}$/;
-    if (videoIdPattern.test(value)) return `https://www.youtube-nocookie.com/embed/${value}?autoplay=1&rel=0`;
+    if (videoIdPattern.test(value))
+      return `https://www.youtube-nocookie.com/embed/${value}?autoplay=1&rel=0`;
 
     try {
       const parsed = new URL(value);
       const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
       let videoId = '';
       if (host === 'youtu.be') videoId = parsed.pathname.split('/').filter(Boolean)[0] ?? '';
-      else if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+      else if (
+        host === 'youtube.com' ||
+        host === 'm.youtube.com' ||
+        host === 'youtube-nocookie.com'
+      ) {
         if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') ?? '';
-        else if (/^\/(embed|shorts)\//.test(parsed.pathname)) videoId = parsed.pathname.split('/')[2] ?? '';
+        else if (/^\/(embed|shorts)\//.test(parsed.pathname))
+          videoId = parsed.pathname.split('/')[2] ?? '';
       }
       return videoIdPattern.test(videoId)
         ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`
@@ -81,7 +98,12 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
             navigation
             spaceBetween={8}
             slidesPerView={4}
-            breakpoints={{ 0: { slidesPerView: 1.2 }, 600: { slidesPerView: 2 }, 900: { slidesPerView: 3 }, 1200: { slidesPerView: 4 } }}
+            breakpoints={{
+              0: { slidesPerView: 1.2 },
+              600: { slidesPerView: 2 },
+              900: { slidesPerView: 3 },
+              1200: { slidesPerView: 4 },
+            }}
           >
             {displayMovies.map((movie) => {
               const title = movie.title_vn || movie.title;
@@ -109,9 +131,11 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
                           <span>PLAY</span>
                         </Button>
                         <Box className="movie-actions">
-                          <Button className="movie-detail-button" onClick={() => navigate(movieUrl)}>XEM CHI TIẾT</Button>
-                          <Button className="movie-buy-button" onClick={() => navigate(movieUrl)}>
-                            <ConfirmationNumberOutlinedIcon /> MUA VÉ
+                          <Button
+                            className="movie-detail-button"
+                            onClick={() => navigate(movieUrl)}
+                          >
+                            XEM CHI TIẾT
                           </Button>
                         </Box>
                       </Box>
@@ -123,8 +147,14 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
             })}
           </Swiper>
         )}
-        <Snackbar open={trailerNotice} autoHideDuration={2800} onClose={() => setTrailerNotice(false)}>
-          <Alert severity="info" onClose={() => setTrailerNotice(false)}>Trailer phim chưa được cập nhật.</Alert>
+        <Snackbar
+          open={trailerNotice}
+          autoHideDuration={2800}
+          onClose={() => setTrailerNotice(false)}
+        >
+          <Alert severity="info" onClose={() => setTrailerNotice(false)}>
+            Trailer phim chưa được cập nhật.
+          </Alert>
         </Snackbar>
         <Dialog
           open={Boolean(activeTrailer)}
@@ -135,7 +165,20 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
           PaperProps={{ sx: { overflow: 'visible', bgcolor: 'transparent', boxShadow: 'none' } }}
         >
           <DialogContent sx={{ p: 0, overflow: 'visible' }}>
-            <Typography id="movie-trailer-title" component="h2" sx={{ position: 'absolute', width: 1, height: 1, p: 0, m: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap' }}>
+            <Typography
+              id="movie-trailer-title"
+              component="h2"
+              sx={{
+                position: 'absolute',
+                width: 1,
+                height: 1,
+                p: 0,
+                m: -1,
+                overflow: 'hidden',
+                clip: 'rect(0, 0, 0, 0)',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {activeTrailer?.title}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.25 }}>
@@ -162,7 +205,13 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
                 title={`Trailer: ${activeTrailer.title}`}
                 allow="autoplay; encrypted-media; picture-in-picture; web-share"
                 allowFullScreen
-                sx={{ display: 'block', width: '100%', aspectRatio: '16 / 9', border: '1px solid #fff', boxShadow: '0 8px 28px #0008' }}
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  aspectRatio: '16 / 9',
+                  border: '1px solid #fff',
+                  boxShadow: '0 8px 28px #0008',
+                }}
               />
             )}
           </DialogContent>

@@ -12,9 +12,12 @@ const CinemaRooms: React.FC = () => {
     fetchCinemaRooms(controller.signal)
       .then(setRooms)
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Không tải được danh sách phòng.');
+        if (!controller.signal.aborted)
+          setError(reason instanceof Error ? reason.message : 'Không tải được danh sách phòng.');
       })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
   }, []);
 
@@ -23,14 +26,26 @@ const CinemaRooms: React.FC = () => {
       <Container maxWidth="lg">
         <Typography className="section-title">HỆ THỐNG PHÒNG CHIẾU</Typography>
         {error && <Alert severity="warning">{error}</Alert>}
-        {loading ? <Box className="api-loading"><CircularProgress size={24} /> Đang tải phòng chiếu…</Box> : (
+        {loading ? (
+          <Box className="api-loading">
+            <CircularProgress size={24} /> Đang tải phòng chiếu…
+          </Box>
+        ) : (
           <Box className="cinema-room-grid">
-            {rooms.map((room) => <Box className="cinema-room-card" key={room.id}>
-              <Typography className="movie-detail-kicker">{room.type}</Typography>
-              <Typography component="h2" className="movie-detail-title">{room.name}</Typography>
-              <Typography>Phòng {room.room_number} · Sức chứa {room.capacity} chỗ</Typography>
-            </Box>)}
-            {rooms.length === 0 && !error && <Typography>Chưa có thông tin phòng chiếu.</Typography>}
+            {rooms.map((room) => (
+              <Box className="cinema-room-card" key={room.id}>
+                <Typography className="movie-detail-kicker">{room.type}</Typography>
+                <Typography component="h2" className="movie-detail-title">
+                  {room.name}
+                </Typography>
+                <Typography>
+                  Phòng {room.room_number} · Sức chứa {room.capacity} chỗ
+                </Typography>
+              </Box>
+            ))}
+            {rooms.length === 0 && !error && (
+              <Typography>Chưa có thông tin phòng chiếu.</Typography>
+            )}
           </Box>
         )}
       </Container>

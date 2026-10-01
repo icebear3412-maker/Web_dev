@@ -28,7 +28,6 @@ interface CarouselSlide {
   id: string;
   image: string;
   alt: string;
-  path: string;
   kind: 'banner' | 'movie';
   title?: string;
 }
@@ -37,7 +36,12 @@ const BannerSlides: CarouselSlide[] = [
   { id: 'scotty', image: scotty, alt: 'Scotty giải cứu hoàng thượng', kind: 'banner' },
   { id: 'quyet-cua', image: quyetCua, alt: 'Quyết của anh này', kind: 'banner' },
   { id: 'brad-pitt', image: bradPitt, alt: 'Trái tim quái thú', kind: 'banner' },
-  { id: 'studio-ghibli', image: studioGhibli, alt: 'Hành trình tìm lại bản thân cùng Studio Ghibli', kind: 'banner' },
+  {
+    id: 'studio-ghibli',
+    image: studioGhibli,
+    alt: 'Hành trình tìm lại bản thân cùng Studio Ghibli',
+    kind: 'banner',
+  },
   { id: 'suzume', image: suzume, alt: 'Khóa chặt cửa nào Suzume', kind: 'banner' },
   { id: 'moon-festival', image: moonFestival, alt: 'Ưu đãi Tết Trung thu', kind: 'banner' },
   { id: 'battle', image: battle, alt: 'Vĩnh biệt đại chiến', kind: 'banner' },
@@ -48,7 +52,6 @@ const BannerSlides: CarouselSlide[] = [
 ];
 
 const Carousel: React.FC<CarouselProps> = ({ movies }) => {
-  const navigate = useNavigate();
   const movieSlides: CarouselSlide[] = movies
     .filter((movie) => Boolean(movie.backdrop))
     .map((movie) => ({
@@ -78,16 +81,19 @@ const Carousel: React.FC<CarouselProps> = ({ movies }) => {
                 <Box
                   className={`carousel-slide ${slide.kind === 'movie' ? 'carousel-slide--movie' : ''}`}
                   sx={clickableSx}
-                  onClick={() => navigate(slide.path)}
                   role="link"
                   tabIndex={0}
                 >
                   <img src={slide.image} alt={slide.alt} />
-                  {slide.kind === 'movie' && <Box className="carousel-slide-caption">
-                    <Typography className="carousel-slide-type">PHIM ĐANG CHIẾU</Typography>
-                    <Typography className="carousel-slide-title">{slide.title}</Typography>
-                    <span className="carousel-slide-cta">ĐẶT VÉ NGAY <b>→</b></span>
-                  </Box>}
+                  {slide.kind === 'movie' && (
+                    <Box className="carousel-slide-caption">
+                      <Typography className="carousel-slide-type">PHIM ĐANG CHIẾU</Typography>
+                      <Typography className="carousel-slide-title">{slide.title}</Typography>
+                      <span className="carousel-slide-cta">
+                        ĐẶT VÉ NGAY <b>→</b>
+                      </span>
+                    </Box>
+                  )}
                 </Box>
               </SwiperSlide>
             ))}

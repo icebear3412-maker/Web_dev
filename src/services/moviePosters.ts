@@ -35,7 +35,8 @@ export const movieTrailers: Record<string, string> = {
   'encore_alt_1sht_-_rgb_online_only.jpg': 'https://youtu.be/XsDQf4EsZIs?si=tFLdPU41A7jyf14m',
   'fid_trio_470x700.jpg': '',
   'hop_mainposter_470x700.jpg': 'https://youtu.be/WjcyzHQkumU?si=plJux-mJBIrJyNcy',
-  'is6_intl_online_1080x1350_tsr_bluehands_02_1_.jpg': 'https://youtu.be/PwX6QDl8dTU?si=PKhty3Ejc6Gl2rjB',
+  'is6_intl_online_1080x1350_tsr_bluehands_02_1_.jpg':
+    'https://youtu.be/PwX6QDl8dTU?si=PKhty3Ejc6Gl2rjB',
   'outlined_poster_castle-in-the-sky.jpg': 'https://youtu.be/0P8vhBmiA14?si=bDJX7St4hDKalXVi',
   'outlined_poster_when-marnie-was-there.jpg': 'https://youtu.be/g3KES9FASh8?si=ivQFHvkAFAfhoBfp',
   'TheOdyssey.jpg': 'https://youtu.be/vRYJwJIdpjs?si=I1h7-G9rh5OZk6Q-',
@@ -45,7 +46,10 @@ export const localMoviePosters: Movie[] = Object.entries(posterFiles)
   .sort(([pathA], [pathB]) => pathA.localeCompare(pathB))
   .map(([path, poster]) => {
     const filename = path.split('/').at(-1) ?? 'movie';
-    const slug = filename.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const slug = filename
+      .replace(/\.[^.]+$/, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-');
     return {
       id: `local-${slug}`,
       title: movieTitles[filename] ?? '',
