@@ -1,11 +1,44 @@
+import type { FC, ReactNode } from 'react';
+
 interface IDefaultReactProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 interface IRoute {
   path: string;
-  component: React.FC;
-  layout: React.FC<IDefaultReactProps> | null;
+  component: FC;
+  layout: FC<IDefaultReactProps> | null;
 }
 
-export type { IDefaultReactProps, IRoute };
+interface Screening {
+  id: number;
+  time: string;
+  room: string;
+}
+
+interface MovieItem {
+  id: number;
+  title: string;
+  genre: string;
+  image: string;
+  duration: number;
+  releaseDate: string;
+  status: 'Showing' | 'Hidden';
+  screenings: Screening[];
+}
+
+interface MovieForm {
+  title: string;
+  genre: string;
+  image: string;
+  duration: number;
+  releaseDate: string;
+}
+
+export type {
+  IDefaultReactProps,
+  IRoute,
+  Screening,
+  MovieItem,
+  MovieForm,
+};
