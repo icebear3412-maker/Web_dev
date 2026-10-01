@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sv_cinema_integrated_db
+    restart: unless-stopped
+    command: ['postgres', '-p', '4444']
+    ports:
+      - '4444:4444'
+    environment:
+      POSTGRES_DB: cinema_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - integrated_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d cinema_db -p 4444']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    container_name: sv_cinema_integrated_web
+    restart: unless-stopped
+    ports:
+      - '${HOST_PORT:-3333}:2222'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:4444/cinema_db
+      PORT: 2222
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set in .env}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-System Administrator}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  integrated_pgdata:
