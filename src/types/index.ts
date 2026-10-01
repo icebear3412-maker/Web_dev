@@ -1,3 +1,4 @@
+import type { SvgIconComponent } from '@mui/icons-material';
 import type { FC, ReactNode } from 'react';
 
 interface IDefaultReactProps {
@@ -39,4 +40,39 @@ interface MovieForm {
   releaseDate: string;
 }
 
-export type { IDefaultReactProps, IRoute, Screening, MovieItem, MovieForm };
+interface ICardWithLink {
+  image: string;
+  linkTo: string;
+}
+
+interface ICardWithDescription {
+  title: string;
+  text: string;
+  image: string;
+  linkTo: string;
+}
+
+interface IButtonWithIconAndDisplayText {
+  display: string;
+  link: string;
+  icon: SvgIconComponent;
+}
+
+interface IMovieCard {
+  title: string;
+  age: number;
+  image: string;
+  linkTo: string;
+}
+
+export type {
+  IDefaultReactProps,
+  IRoute,
+  Screening,
+  MovieItem,
+  MovieForm,
+  ICardWithLink,
+  ICardWithDescription,
+  IMovieCard,
+  IButtonWithIconAndDisplayText,
+};
