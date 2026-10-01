@@ -28,30 +28,7 @@ import {
   Typography,
 } from '@mui/material';
 
-interface Screening {
-  id: number;
-  time: string;
-  room: string;
-}
-
-interface MovieItem {
-  id: number;
-  title: string;
-  genre: string;
-  image: string;
-  duration: number;
-  releaseDate: string;
-  status: 'Showing' | 'Hidden';
-  screenings: Screening[];
-}
-
-interface MovieForm {
-  title: string;
-  genre: string;
-  image: string;
-  duration: number;
-  releaseDate: string;
-}
+import type { MovieForm, MovieItem, Screening } from '@/types';
 
 const emptyMovie: MovieForm = {
   title: '',
@@ -77,9 +54,9 @@ const MovieListPage: React.FC = () => {
     room: 'Room 1',
   });
 
-  // ==========================================================
+  // ============================================================
   // LOAD MOVIES
-  // ==========================================================
+  // ============================================================
 
   const loadMovies = async () => {
     try {
@@ -112,10 +89,9 @@ const MovieListPage: React.FC = () => {
     loadMovies();
   }, []);
 
-  // ==========================================================
+  // ============================================================
   // SORT MOVIES
-  // Showing first
-  // ==========================================================
+  // ============================================================
 
   const sortedMovies = useMemo(
     () =>
@@ -123,9 +99,9 @@ const MovieListPage: React.FC = () => {
     [movies],
   );
 
-  // ==========================================================
+  // ============================================================
   // LOAD SCREENINGS
-  // ==========================================================
+  // ============================================================
 
   const loadScreenings = async (movieId: number): Promise<Screening[]> => {
     try {
@@ -149,9 +125,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
+  // ============================================================
   // OPEN MODIFY
-  // ==========================================================
+  // ============================================================
 
   const openModify = async (movie: MovieItem) => {
     const screenings = await loadScreenings(movie.id);
@@ -167,9 +143,9 @@ const MovieListPage: React.FC = () => {
     });
   };
 
-  // ==========================================================
+  // ============================================================
   // DETAILS
-  // ==========================================================
+  // ============================================================
 
   const toggleDetails = async (movieId: number) => {
     if (expandedId === movieId) {
@@ -193,9 +169,9 @@ const MovieListPage: React.FC = () => {
     setExpandedId(movieId);
   };
 
-  // ==========================================================
+  // ============================================================
   // UPDATE MOVIE
-  // ==========================================================
+  // ============================================================
 
   const updateMovie = async (movie: MovieItem) => {
     try {
@@ -240,9 +216,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
+  // ============================================================
   // ADD MOVIE
-  // ==========================================================
+  // ============================================================
 
   const addMovie = async () => {
     if (!newMovie.title.trim()) {
@@ -291,9 +267,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
+  // ============================================================
   // TAKE DOWN / RESTORE
-  // ==========================================================
+  // ============================================================
 
   const toggleMovieStatus = async (id: number) => {
     const movie = movies.find((item) => item.id === id);
@@ -336,9 +312,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
+  // ============================================================
   // DELETE MOVIE
-  // ==========================================================
+  // ============================================================
 
   const deleteMovie = async (id: number) => {
     const movie = movies.find((item) => item.id === id);
@@ -378,9 +354,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
+  // ============================================================
   // ADD SCREENING
-  // ==========================================================
+  // ============================================================
 
   const addScreening = async () => {
     if (!editingMovie || !newScreening.time) {
@@ -422,7 +398,6 @@ const MovieListPage: React.FC = () => {
         };
       });
 
-      // Also update the movie list
       setMovies((current) =>
         current.map((movie) =>
           movie.id === editingMovie.id
@@ -443,9 +418,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
+  // ============================================================
   // REMOVE SCREENING
-  // ==========================================================
+  // ============================================================
 
   const removeScreening = async (screeningId: number) => {
     if (!editingMovie) {
@@ -487,9 +462,9 @@ const MovieListPage: React.FC = () => {
     }
   };
 
-  // ==========================================================
-  // RENDER
-  // ==========================================================
+  // ============================================================
+  // UI
+  // ============================================================
 
   return (
     <Box
@@ -502,8 +477,6 @@ const MovieListPage: React.FC = () => {
         mx: 'auto',
       }}
     >
-      {/* HEADER */}
-
       <Stack
         direction={{
           xs: 'column',
@@ -534,8 +507,6 @@ const MovieListPage: React.FC = () => {
         </Button>
       </Stack>
 
-      {/* MOVIE LIST */}
-
       <Stack spacing={2}>
         {sortedMovies.map((movie) => {
           const expanded = expandedId === movie.id;
@@ -562,8 +533,6 @@ const MovieListPage: React.FC = () => {
                     },
                   }}
                 >
-                  {/* MOVIE INFO */}
-
                   <Box
                     sx={{
                       flex: 1,
@@ -624,8 +593,6 @@ const MovieListPage: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  {/* ACTIONS */}
-
                   <Stack
                     direction="row"
                     spacing={1}
@@ -671,8 +638,6 @@ const MovieListPage: React.FC = () => {
                   </Stack>
                 </Stack>
 
-                {/* DETAILS */}
-
                 {expanded && (
                   <>
                     <Divider sx={{ my: 2 }} />
@@ -708,9 +673,9 @@ const MovieListPage: React.FC = () => {
         })}
       </Stack>
 
-      {/* ======================================================
+      {/* ========================================================
           ADD MOVIE DIALOG
-          ====================================================== */}
+      ======================================================== */}
 
       <Dialog open={addingMovie} onClose={() => setAddingMovie(false)} fullWidth maxWidth="sm">
         <DialogTitle>Add New Movie</DialogTitle>
@@ -810,9 +775,9 @@ const MovieListPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* ======================================================
+      {/* ========================================================
           MODIFY MOVIE DIALOG
-          ====================================================== */}
+      ======================================================== */}
 
       <Dialog
         open={editingMovie !== null}
@@ -906,8 +871,6 @@ const MovieListPage: React.FC = () => {
                 fullWidth
               />
 
-              {/* SCREENINGS */}
-
               <Divider />
 
               <Typography variant="h6" fontWeight={700}>
@@ -943,8 +906,6 @@ const MovieListPage: React.FC = () => {
                   ))}
                 </Stack>
               )}
-
-              {/* ADD SCREENING */}
 
               <Stack
                 direction={{
