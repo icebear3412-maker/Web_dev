@@ -1,6 +1,5 @@
-// src/pages/Admin/Movies/index.tsx
-
 import React, { useEffect, useMemo, useState } from 'react';
+
 import {
   Add,
   CalendarMonth,
@@ -8,12 +7,12 @@ import {
   Edit,
   KeyboardArrowDown,
   KeyboardArrowUp,
-  Movie,
-  PlayCircleOutline,
   Restore,
   VisibilityOff,
 } from '@mui/icons-material';
+
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -22,16 +21,16 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  IconButton,
   MenuItem,
   Paper,
   Select,
+  Snackbar,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 
-import type { MovieForm, MovieItem, Screening } from '../../../types';
+import type { MovieForm, MovieItem, Screening } from '@/types';
 
 const emptyMovie: MovieForm = {
   title: '',
@@ -39,32 +38,112 @@ const emptyMovie: MovieForm = {
   image: '',
   trailerUrl: '',
   description: '',
-  duration: 0,
+  duration: 120,
   releaseDate: '',
 };
 
-const API_URL = '/movies';
-
-const MoviesPage: React.FC = () => {
+const MovieListPage: React.FC = () => {
   const [movies, setMovies] = useState<MovieItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [editingMovie, setEditingMovie] = useState<MovieItem | null>(null);
+  const [addingMovie, setAddingMovie] = useState(false);
+  const [newMovie, setNewMovie] = useState<MovieForm>(emptyMovie);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [newScreening, setNewScreening] = useState({
+    time: '',
+    room: 'Room 1',
+  });
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info',
+  });
 
-  const [addOpen, setAddOpen] = useState(false);
-  const [editMovie, setEditMovie] = useState<MovieItem | null>(null);
-  const [movieForm, setMovieForm] = useState<MovieForm>(emptyMovie);
+  const showToast = (
+    message: string,
+    severity: 'success' | 'error' | 'warning' | 'info' = 'success',
+  ) => {
+    setToast({
+      open: true,
+      message,
+      severity,
+    });
+  };
 
-  const [expandedMovie, setExpandedMovie] = useState<number | null>(null);
+  const closeToast = () => {
+    setToast((current) => ({
+      ...current,
+      open: false,
+    }));
+  };
 
-  const [screeningTime, setScreeningTime] = useState('');
-  const [screeningRoom, setScreeningRoom] = useState('');
+  const isValidUrl = (value: string) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
 
-  const [filter, setFilter] = useState<'all' | 'showing' | 'hidden'>('all');
+  const validateMovie = (movie: MovieForm): string | null => {
+    if (!movie.title.trim()) {
+      return 'Movie title is required.';
+    }
+
+    if (movie.title.trim().length < 2) {
+      return 'Movie title must contain at least 2 characters.';
+    }
+
+    if (!movie.genre.trim()) {
+      return 'Genre is required.';
+    }
+
+    if (!movie.image.trim()) {
+      return 'Poster URL is required.';
+    }
+
+    if (!isValidUrl(movie.image.trim())) {
+      return 'Please enter a valid poster URL.';
+    }
+
+    if (!movie.trailerUrl.trim()) {
+      return 'Trailer URL is required.';
+    }
+
+    if (!isValidUrl(movie.trailerUrl.trim())) {
+      return 'Please enter a valid trailer URL.';
+    }
+
+    if (!movie.description.trim()) {
+      return 'Description is required.';
+    }
+
+    if (movie.description.trim().length < 5) {
+      return 'Description must contain at least 5 characters.';
+    }
+
+    if (!Number.isInteger(Number(movie.duration)) || Number(movie.duration) <= 0) {
+      return 'Duration must be a positive integer.';
+    }
+
+    if (Number(movie.duration) > 600) {
+      return 'Duration cannot be greater than 600 minutes.';
+    }
+
+    if (!movie.releaseDate) {
+      return 'Release date is required.';
+    }
+
+    if (Number.isNaN(new Date(`${movie.releaseDate}T00:00:00`).getTime())) {
+      return 'Please enter a valid release date.';
+    }
+
+    return null;
+  };
 
   const loadMovies = async () => {
-    setLoading(true);
-
     try {
-      const response = await fetch(API_URL);
+      const response = await fetch('/movies');
 
       if (!response.ok) {
         throw new Error('Failed to load movies');
@@ -72,41 +151,23 @@ const MoviesPage: React.FC = () => {
 
       const data = await response.json();
 
-      const moviesWithScreenings: MovieItem[] = await Promise.all(
-        data.map(async (movie: any) => {
-          let screenings: Screening[] = [];
-
-          try {
-            const screeningResponse = await fetch(`${API_URL}/${movie.id}/screenings`);
-
-            if (screeningResponse.ok) {
-              screenings = await screeningResponse.json();
-            }
-          } catch {
-            screenings = [];
-          }
-
-          return {
-            id: movie.id,
-            title: movie.title || '',
-            genre: movie.genre || '',
-            image: movie.poster || '',
-            trailerUrl: movie.trailer_url || '',
-            description: movie.description || '',
-            duration: movie.duration || 0,
-            releaseDate: movie.release_date || '',
-            status: movie.status === 'hidden' ? 'Hidden' : 'Showing',
-            screenings,
-          };
-        }),
+      setMovies(
+        data.map((movie: any) => ({
+          id: Number(movie.id),
+          title: movie.title || '',
+          genre: movie.genre || '',
+          image: movie.poster || '',
+          trailerUrl: movie.trailer_url || '',
+          description: movie.description || '',
+          duration: Number(movie.duration) || 0,
+          releaseDate: movie.release_date || '',
+          status: movie.status === 'showing' ? 'Showing' : 'Hidden',
+          screenings: [],
+        })),
       );
-
-      setMovies(moviesWithScreenings);
     } catch (error) {
       console.error(error);
-      alert('Cannot load movies.');
-    } finally {
-      setLoading(false);
+      showToast('Failed to load movies from database.', 'error');
     }
   };
 
@@ -114,133 +175,196 @@ const MoviesPage: React.FC = () => {
     loadMovies();
   }, []);
 
-  const filteredMovies = useMemo(() => {
-    if (filter === 'showing') {
-      return movies.filter((movie) => movie.status === 'Showing');
+  const sortedMovies = useMemo(
+    () =>
+      [...movies].sort((a, b) => Number(b.status === 'Showing') - Number(a.status === 'Showing')),
+    [movies],
+  );
+
+  const loadScreenings = async (movieId: number): Promise<Screening[]> => {
+    try {
+      const response = await fetch(`/movies/${movieId}/screenings`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load screenings');
+      }
+
+      const data = await response.json();
+
+      return data.map((screening: any) => ({
+        id: Number(screening.id),
+        time: screening.time || '',
+        room: screening.room || '',
+      }));
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  };
+
+  const openModify = async (movie: MovieItem) => {
+    const screenings = await loadScreenings(movie.id);
+
+    setEditingMovie({
+      ...movie,
+      screenings,
+    });
+
+    setNewScreening({
+      time: '',
+      room: 'Room 1',
+    });
+  };
+
+  const toggleDetails = async (movieId: number) => {
+    if (expandedId === movieId) {
+      setExpandedId(null);
+      return;
     }
 
-    if (filter === 'hidden') {
-      return movies.filter((movie) => movie.status === 'Hidden');
-    }
+    const screenings = await loadScreenings(movieId);
 
-    return movies;
-  }, [movies, filter]);
+    setMovies((current) =>
+      current.map((movie) => (movie.id === movieId ? { ...movie, screenings } : movie)),
+    );
 
-  const handleAddMovie = async () => {
-    if (!movieForm.title.trim()) {
-      alert('Movie title is required.');
+    setExpandedId(movieId);
+  };
+
+  const addMovie = async () => {
+    const error = validateMovie(newMovie);
+
+    if (error) {
+      showToast(error, 'warning');
       return;
     }
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch('/movies', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: movieForm.title,
-          genre: movieForm.genre,
-          duration: movieForm.duration,
-          release_date: movieForm.releaseDate || null,
-          poster: movieForm.image,
-          trailer_url: movieForm.trailerUrl,
-          description: movieForm.description,
+          title: newMovie.title.trim(),
+          genre: newMovie.genre.trim(),
+          duration: Number(newMovie.duration),
+          release_date: newMovie.releaseDate,
+          poster: newMovie.image.trim(),
+          trailer_url: newMovie.trailerUrl.trim(),
+          description: newMovie.description.trim(),
           status: 'showing',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create movie');
+        const data = await response.json().catch(() => null);
+
+        throw new Error(data?.error || 'Failed to create movie');
       }
 
-      const createdMovie = await response.json();
+      const movie = await response.json();
 
-      setMovies((prev) => [
-        ...prev,
+      setMovies((current) => [
+        ...current,
         {
-          id: createdMovie.id,
-          title: createdMovie.title || '',
-          genre: createdMovie.genre || '',
-          image: createdMovie.poster || '',
-          trailerUrl: createdMovie.trailer_url || '',
-          description: createdMovie.description || '',
-          duration: createdMovie.duration || 0,
-          releaseDate: createdMovie.release_date || '',
-          status: createdMovie.status === 'hidden' ? 'Hidden' : 'Showing',
+          id: Number(movie.id),
+          title: movie.title || '',
+          genre: movie.genre || '',
+          image: movie.poster || '',
+          trailerUrl: movie.trailer_url || '',
+          description: movie.description || '',
+          duration: Number(movie.duration) || 0,
+          releaseDate: movie.release_date || '',
+          status: movie.status === 'showing' ? 'Showing' : 'Hidden',
           screenings: [],
         },
       ]);
 
-      setMovieForm(emptyMovie);
-      setAddOpen(false);
+      setNewMovie(emptyMovie);
+      setAddingMovie(false);
+
+      showToast('Movie added successfully.');
     } catch (error) {
-      console.error(error);
-      alert('Cannot create movie.');
+      showToast(error instanceof Error ? error.message : 'Failed to add movie.', 'error');
     }
   };
 
-  const handleUpdateMovie = async () => {
-    if (!editMovie) {
-      return;
-    }
+  const updateMovie = async (movie: MovieItem) => {
+    const error = validateMovie({
+      title: movie.title,
+      genre: movie.genre,
+      image: movie.image,
+      trailerUrl: movie.trailerUrl,
+      description: movie.description,
+      duration: movie.duration,
+      releaseDate: movie.releaseDate,
+    });
 
-    if (!movieForm.title.trim()) {
-      alert('Movie title is required.');
+    if (error) {
+      showToast(error, 'warning');
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/${editMovie.id}`, {
+      const response = await fetch(`/movies/${movie.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: movieForm.title,
-          genre: movieForm.genre,
-          duration: movieForm.duration,
-          release_date: movieForm.releaseDate || null,
-          poster: movieForm.image,
-          trailer_url: movieForm.trailerUrl,
-          description: movieForm.description,
+          title: movie.title.trim(),
+          genre: movie.genre.trim(),
+          duration: Number(movie.duration),
+          release_date: movie.releaseDate,
+          poster: movie.image.trim(),
+          trailer_url: movie.trailerUrl.trim(),
+          description: movie.description.trim(),
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update movie');
+        const data = await response.json().catch(() => null);
+
+        throw new Error(data?.error || 'Failed to update movie');
       }
 
-      const updatedMovie = await response.json();
+      const updated = await response.json();
 
-      setMovies((prev) =>
-        prev.map((movie) =>
-          movie.id === editMovie.id
+      setMovies((current) =>
+        current.map((item) =>
+          item.id === movie.id
             ? {
-                ...movie,
-                title: updatedMovie.title || '',
-                genre: updatedMovie.genre || '',
-                image: updatedMovie.poster || '',
-                trailerUrl: updatedMovie.trailer_url || '',
-                description: updatedMovie.description || '',
-                duration: updatedMovie.duration || 0,
-                releaseDate: updatedMovie.release_date || '',
+                ...item,
+                title: updated.title || '',
+                genre: updated.genre || '',
+                duration: Number(updated.duration) || 0,
+                releaseDate: updated.release_date || '',
+                image: updated.poster || '',
+                trailerUrl: updated.trailer_url || '',
+                description: updated.description || '',
               }
-            : movie,
+            : item,
         ),
       );
 
-      setEditMovie(null);
-      setMovieForm(emptyMovie);
+      setEditingMovie(null);
+
+      showToast('Movie updated successfully.');
     } catch (error) {
-      console.error(error);
-      alert('Cannot update movie.');
+      showToast(error instanceof Error ? error.message : 'Failed to update movie.', 'error');
     }
   };
 
-  const handleChangeStatus = async (movie: MovieItem, status: 'showing' | 'hidden') => {
+  const toggleMovieStatus = async (id: number) => {
+    const movie = movies.find((item) => item.id === id);
+
+    if (!movie) return;
+
+    const status = movie.status === 'Showing' ? 'hidden' : 'showing';
+
     try {
-      const response = await fetch(`${API_URL}/${movie.id}`, {
+      const response = await fetch(`/movies/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -251,34 +375,41 @@ const MoviesPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to change movie status');
+        throw new Error('Failed to update movie status');
       }
 
-      setMovies((prev) =>
-        prev.map((item) =>
-          item.id === movie.id
+      const updated = await response.json();
+
+      setMovies((current) =>
+        current.map((item) =>
+          item.id === id
             ? {
                 ...item,
-                status: status === 'hidden' ? 'Hidden' : 'Showing',
+                status: updated.status === 'showing' ? 'Showing' : 'Hidden',
               }
             : item,
         ),
       );
+
+      showToast(
+        status === 'showing' ? 'Movie restored successfully.' : 'Movie taken down successfully.',
+      );
     } catch (error) {
-      console.error(error);
-      alert('Cannot change movie status.');
+      showToast(error instanceof Error ? error.message : 'Failed to update movie status.', 'error');
     }
   };
 
-  const handleDeleteMovie = async (movie: MovieItem) => {
-    const confirmed = window.confirm(`Delete "${movie.title}" permanently?`);
+  const deleteMovie = async (id: number) => {
+    const movie = movies.find((item) => item.id === id);
 
-    if (!confirmed) {
+    if (!movie) return;
+
+    if (!window.confirm(`Are you sure you want to permanently delete "${movie.title}"?`)) {
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/${movie.id}`, {
+      const response = await fetch(`/movies/${id}`, {
         method: 'DELETE',
       });
 
@@ -286,59 +417,97 @@ const MoviesPage: React.FC = () => {
         throw new Error('Failed to delete movie');
       }
 
-      setMovies((prev) => prev.filter((item) => item.id !== movie.id));
+      setMovies((current) => current.filter((item) => item.id !== id));
+
+      if (expandedId === id) {
+        setExpandedId(null);
+      }
+
+      if (editingMovie?.id === id) {
+        setEditingMovie(null);
+      }
+
+      showToast('Movie deleted successfully.');
     } catch (error) {
-      console.error(error);
-      alert('Cannot delete movie.');
+      showToast(error instanceof Error ? error.message : 'Failed to delete movie.', 'error');
     }
   };
 
-  const handleAddScreening = async (movie: MovieItem) => {
-    if (!screeningTime || !screeningRoom.trim()) {
-      alert('Please enter both time and room.');
+  const addScreening = async () => {
+    if (!editingMovie) return;
+
+    if (!newScreening.time) {
+      showToast('Please select a screening time.', 'warning');
+      return;
+    }
+
+    if (!newScreening.room) {
+      showToast('Please select a room.', 'warning');
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/${movie.id}/screenings`, {
+      const response = await fetch(`/movies/${editingMovie.id}/screenings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          time: screeningTime,
-          room: screeningRoom,
+          screening_time: newScreening.time,
+          room: newScreening.room,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create screening');
+        const data = await response.json().catch(() => null);
+
+        throw new Error(data?.error || 'Failed to add screening');
       }
 
-      const createdScreening = await response.json();
+      const screening = await response.json();
 
-      setMovies((prev) =>
-        prev.map((item) =>
-          item.id === movie.id
+      const item: Screening = {
+        id: Number(screening.id),
+        time: screening.time || '',
+        room: screening.room || '',
+      };
+
+      setEditingMovie((current) =>
+        current
+          ? {
+              ...current,
+              screenings: [...current.screenings, item],
+            }
+          : current,
+      );
+
+      setMovies((current) =>
+        current.map((movie) =>
+          movie.id === editingMovie.id
             ? {
-                ...item,
-                screenings: [...item.screenings, createdScreening],
+                ...movie,
+                screenings: [...movie.screenings, item],
               }
-            : item,
+            : movie,
         ),
       );
 
-      setScreeningTime('');
-      setScreeningRoom('');
+      setNewScreening({
+        time: '',
+        room: 'Room 1',
+      });
+
+      showToast('Screening added successfully.');
     } catch (error) {
-      console.error(error);
-      alert('Cannot add screening.');
+      showToast(error instanceof Error ? error.message : 'Failed to add screening.', 'error');
     }
   };
 
-  const handleDeleteScreening = async (movie: MovieItem, screening: Screening) => {
+  const removeScreening = async (screeningId: number) => {
+    if (!editingMovie) return;
+
     try {
-      const response = await fetch(`${API_URL}/${movie.id}/screenings/${screening.id}`, {
+      const response = await fetch(`/movies/${editingMovie.id}/screenings/${screeningId}`, {
         method: 'DELETE',
       });
 
@@ -346,198 +515,181 @@ const MoviesPage: React.FC = () => {
         throw new Error('Failed to delete screening');
       }
 
-      setMovies((prev) =>
-        prev.map((item) =>
-          item.id === movie.id
+      setEditingMovie((current) =>
+        current
+          ? {
+              ...current,
+              screenings: current.screenings.filter((item) => item.id !== screeningId),
+            }
+          : current,
+      );
+
+      setMovies((current) =>
+        current.map((movie) =>
+          movie.id === editingMovie.id
             ? {
-                ...item,
-                screenings: item.screenings.filter(
-                  (itemScreening) => itemScreening.id !== screening.id,
-                ),
+                ...movie,
+                screenings: movie.screenings.filter((item) => item.id !== screeningId),
               }
-            : item,
+            : movie,
         ),
       );
+
+      showToast('Screening removed successfully.');
     } catch (error) {
-      console.error(error);
-      alert('Cannot delete screening.');
+      showToast(error instanceof Error ? error.message : 'Failed to remove screening.', 'error');
     }
   };
 
-  const openEditDialog = (movie: MovieItem) => {
-    setEditMovie(movie);
-
-    setMovieForm({
-      title: movie.title,
-      genre: movie.genre,
-      image: movie.image,
-      trailerUrl: movie.trailerUrl,
-      description: movie.description,
-      duration: movie.duration,
-      releaseDate: movie.releaseDate,
-    });
-  };
-
   return (
-    <Box sx={{ p: 4 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+    <Box
+      sx={{
+        p: { xs: 2, md: 4 },
+        maxWidth: 1400,
+        mx: 'auto',
+      }}
+    >
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        gap={2}
+        sx={{
+          justifyContent: 'space-between',
+          alignItems: {
+            xs: 'stretch',
+            sm: 'center',
+          },
+          mb: 3,
+        }}
+      >
         <Box>
           <Typography variant="h4" fontWeight={700}>
             Movie List
           </Typography>
 
           <Typography color="text.secondary">
-            Manage movies, descriptions and screening schedules.
+            Manage movies, screening times and cinema rooms.
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => {
-            setMovieForm(emptyMovie);
-            setAddOpen(true);
-          }}
-        >
-          Add Movie
+        <Button variant="contained" startIcon={<Add />} onClick={() => setAddingMovie(true)}>
+          Add new movie
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
-        <Button
-          variant={filter === 'all' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('all')}
-        >
-          All
-        </Button>
+      <Stack spacing={2}>
+        {sortedMovies.map((movie) => {
+          const expanded = expandedId === movie.id;
 
-        <Button
-          variant={filter === 'showing' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('showing')}
-        >
-          Showing
-        </Button>
-
-        <Button
-          variant={filter === 'hidden' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('hidden')}
-        >
-          Hidden
-        </Button>
-      </Stack>
-
-      {loading ? (
-        <Typography>Loading movies...</Typography>
-      ) : filteredMovies.length === 0 ? (
-        <Paper sx={{ p: 5, textAlign: 'center' }}>
-          <Movie sx={{ fontSize: 50, mb: 1 }} />
-
-          <Typography variant="h6">No movies found</Typography>
-        </Paper>
-      ) : (
-        <Stack spacing={2}>
-          {filteredMovies.map((movie) => {
-            const expanded = expandedMovie === movie.id;
-
-            return (
-              <Paper
-                key={movie.id}
-                elevation={2}
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                }}
-              >
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 90,
-                      height: 120,
-                      borderRadius: 1,
-                      overflow: 'hidden',
-                      backgroundColor: '#eee',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {movie.image ? (
-                      <Box
-                        component="img"
-                        src={movie.image}
-                        alt={movie.title}
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <Stack alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
-                        <Movie />
-                      </Stack>
-                    )}
-                  </Box>
-
+          return (
+            <Paper key={movie.id} variant="outlined">
+              <Box sx={{ p: 2.5 }}>
+                <Stack
+                  direction={{
+                    xs: 'column',
+                    lg: 'row',
+                  }}
+                  spacing={2}
+                  sx={{
+                    alignItems: {
+                      xs: 'stretch',
+                      lg: 'center',
+                    },
+                  }}
+                >
                   <Box sx={{ flex: 1 }}>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                      <Typography variant="h6" fontWeight={700}>
-                        {movie.title}
-                      </Typography>
+                    <Stack
+                      direction="row"
+                      gap={2}
+                      sx={{
+                        alignItems: 'center',
+                      }}
+                    >
+                      {movie.image ? (
+                        <Box
+                          component="img"
+                          src={movie.image}
+                          alt={movie.title}
+                          sx={{
+                            width: 100,
+                            height: 140,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 100,
+                            height: 140,
+                            bgcolor: 'grey.200',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 1,
+                          }}
+                        >
+                          No image
+                        </Box>
+                      )}
 
-                      <Chip
-                        size="small"
-                        label={movie.status}
-                        color={movie.status === 'Showing' ? 'success' : 'default'}
-                      />
+                      <Box>
+                        <Typography variant="h6">{movie.title}</Typography>
+
+                        <Chip
+                          size="small"
+                          label={movie.status}
+                          color={movie.status === 'Showing' ? 'success' : 'default'}
+                        />
+                      </Box>
                     </Stack>
 
-                    <Typography color="text.secondary">
-                      {movie.genre || 'No genre'} • {movie.duration} minutes
+                    <Typography color="text.secondary" mt={1}>
+                      {movie.genre} · {movie.duration} min · Release {movie.releaseDate}
                     </Typography>
-
-                    {movie.releaseDate && (
-                      <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                        <CalendarMonth fontSize="small" />
-
-                        <Typography variant="body2">Release: {movie.releaseDate}</Typography>
-                      </Stack>
-                    )}
-
-                    {movie.description && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          mt: 1,
-                          maxWidth: 800,
-                        }}
-                      >
-                        {movie.description}
-                      </Typography>
-                    )}
                   </Box>
 
-                  <Stack direction="row" spacing={0.5}>
-                    <IconButton onClick={() => setExpandedMovie(expanded ? null : movie.id)}>
-                      {expanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                    </IconButton>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={movie.status === 'Showing' ? <VisibilityOff /> : <Restore />}
+                      onClick={() => toggleMovieStatus(movie.id)}
+                    >
+                      {movie.status === 'Showing' ? 'Take down' : 'Bring back'}
+                    </Button>
 
-                    <IconButton onClick={() => openEditDialog(movie)}>
-                      <Edit />
-                    </IconButton>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<Edit />}
+                      onClick={() => openModify(movie)}
+                    >
+                      Modify
+                    </Button>
 
-                    {movie.status === 'Showing' ? (
-                      <IconButton onClick={() => handleChangeStatus(movie, 'hidden')}>
-                        <VisibilityOff />
-                      </IconButton>
-                    ) : (
-                      <IconButton onClick={() => handleChangeStatus(movie, 'showing')}>
-                        <Restore />
-                      </IconButton>
-                    )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Delete />}
+                      onClick={() => deleteMovie(movie.id)}
+                    >
+                      Delete
+                    </Button>
 
-                    <IconButton color="error" onClick={() => handleDeleteMovie(movie)}>
-                      <Delete />
-                    </IconButton>
+                    <Button
+                      size="small"
+                      onClick={() => toggleDetails(movie.id)}
+                      endIcon={expanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                    >
+                      Details
+                    </Button>
                   </Stack>
                 </Stack>
 
@@ -545,322 +697,406 @@ const MoviesPage: React.FC = () => {
                   <>
                     <Divider sx={{ my: 2 }} />
 
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                        Description
-                      </Typography>
+                    <Typography fontWeight={700} mb={1}>
+                      Screening times & rooms
+                    </Typography>
 
-                      <Typography color="text.secondary" sx={{ mb: 3 }}>
-                        {movie.description || 'No description available.'}
-                      </Typography>
-
-                      {movie.trailerUrl && (
-                        <Button
-                          variant="outlined"
-                          startIcon={<PlayCircleOutline />}
-                          href={movie.trailerUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          sx={{ mb: 3 }}
-                        >
-                          Watch Trailer
-                        </Button>
-                      )}
-
-                      <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-                        Screening Times
-                      </Typography>
-
-                      <Stack spacing={1} sx={{ mb: 3 }}>
-                        {movie.screenings.length === 0 ? (
-                          <Typography color="text.secondary">No screening times.</Typography>
-                        ) : (
-                          movie.screenings.map((screening) => (
-                            <Stack
-                              key={screening.id}
-                              direction="row"
-                              spacing={2}
-                              alignItems="center"
-                            >
-                              <Chip label={screening.time} />
-
-                              <Typography>Room {screening.room}</Typography>
-
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDeleteScreening(movie, screening)}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </Stack>
-                          ))
-                        )}
-                      </Stack>
-
+                    {movie.screenings.length === 0 ? (
+                      <Typography color="text.secondary">No screening time yet.</Typography>
+                    ) : (
                       <Stack
-                        direction={{
-                          xs: 'column',
-                          sm: 'row',
-                        }}
+                        direction="row"
                         spacing={1}
-                        alignItems={{
-                          xs: 'stretch',
-                          sm: 'center',
+                        sx={{
+                          flexWrap: 'wrap',
                         }}
                       >
-                        <TextField
-                          label="Time"
-                          type="time"
-                          value={screeningTime}
-                          onChange={(event) => setScreeningTime(event.target.value)}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-
-                        <TextField
-                          label="Room"
-                          value={screeningRoom}
-                          onChange={(event) => setScreeningRoom(event.target.value)}
-                        />
-
-                        <Button
-                          variant="contained"
-                          startIcon={<Add />}
-                          onClick={() => handleAddScreening(movie)}
-                        >
-                          Add Screening
-                        </Button>
+                        {movie.screenings.map((screening) => (
+                          <Chip
+                            key={screening.id}
+                            icon={<CalendarMonth />}
+                            label={`${screening.time} · ${screening.room}`}
+                          />
+                        ))}
                       </Stack>
-                    </Box>
+                    )}
                   </>
                 )}
-              </Paper>
-            );
-          })}
-        </Stack>
-      )}
+              </Box>
+            </Paper>
+          );
+        })}
+      </Stack>
 
-      {/* ADD MOVIE */}
-      <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add Movie</DialogTitle>
+      <Dialog open={addingMovie} onClose={() => setAddingMovie(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Add New Movie</DialogTitle>
 
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2} mt={1}>
             <TextField
-              label="Title"
-              value={movieForm.title}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  title: event.target.value,
+              label="Movie title"
+              value={newMovie.title}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  title: e.target.value,
                 })
               }
-              fullWidth
               required
+              fullWidth
             />
 
             <TextField
               label="Genre"
-              value={movieForm.genre}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  genre: event.target.value,
+              value={newMovie.genre}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  genre: e.target.value,
                 })
               }
+              required
+              fullWidth
+            />
+
+            <TextField
+              label="Poster URL"
+              value={newMovie.image}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  image: e.target.value,
+                })
+              }
+              required
+              fullWidth
+            />
+
+            <TextField
+              label="Trailer URL"
+              value={newMovie.trailerUrl}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  trailerUrl: e.target.value,
+                })
+              }
+              required
+              fullWidth
+            />
+
+            <TextField
+              label="Description"
+              multiline
+              rows={3}
+              value={newMovie.description}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  description: e.target.value,
+                })
+              }
+              required
               fullWidth
             />
 
             <TextField
               label="Duration (minutes)"
               type="number"
-              value={movieForm.duration}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  duration: Number(event.target.value),
+              value={newMovie.duration}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  duration: Number(e.target.value),
                 })
               }
+              required
               fullWidth
-            />
-
-            <TextField
-              label="Release Date"
-              type="date"
-              value={movieForm.releaseDate}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  releaseDate: event.target.value,
-                })
-              }
-              InputLabelProps={{
-                shrink: true,
+              inputProps={{
+                min: 1,
+                max: 600,
               }}
-              fullWidth
             />
 
             <TextField
-              label="Poster URL"
-              value={movieForm.image}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  image: event.target.value,
+              label="Release date"
+              type="date"
+              value={newMovie.releaseDate}
+              onChange={(e) =>
+                setNewMovie({
+                  ...newMovie,
+                  releaseDate: e.target.value,
                 })
               }
+              required
               fullWidth
-            />
-
-            <TextField
-              label="Trailer URL"
-              value={movieForm.trailerUrl}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  trailerUrl: event.target.value,
-                })
-              }
-              fullWidth
-            />
-
-            <TextField
-              label="Description"
-              value={movieForm.description}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  description: event.target.value,
-                })
-              }
-              fullWidth
-              multiline
-              minRows={4}
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
+              }}
             />
           </Stack>
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setAddOpen(false)}>Cancel</Button>
+          <Button onClick={() => setAddingMovie(false)}>Cancel</Button>
 
-          <Button variant="contained" onClick={handleAddMovie}>
-            Add Movie
+          <Button variant="contained" onClick={addMovie}>
+            Add movie
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* MODIFY MOVIE */}
-      <Dialog open={Boolean(editMovie)} onClose={() => setEditMovie(null)} fullWidth maxWidth="sm">
+      <Dialog
+        open={editingMovie !== null}
+        onClose={() => setEditingMovie(null)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>Modify Movie</DialogTitle>
 
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Title"
-              value={movieForm.title}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  title: event.target.value,
-                })
-              }
-              fullWidth
-              required
-            />
+          {editingMovie && (
+            <Stack spacing={2} mt={1}>
+              <TextField
+                label="Movie title"
+                value={editingMovie.title}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    title: e.target.value,
+                  })
+                }
+                required
+                fullWidth
+              />
 
-            <TextField
-              label="Genre"
-              value={movieForm.genre}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  genre: event.target.value,
-                })
-              }
-              fullWidth
-            />
+              <TextField
+                label="Genre"
+                value={editingMovie.genre}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    genre: e.target.value,
+                  })
+                }
+                required
+                fullWidth
+              />
 
-            <TextField
-              label="Duration (minutes)"
-              type="number"
-              value={movieForm.duration}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  duration: Number(event.target.value),
-                })
-              }
-              fullWidth
-            />
+              <TextField
+                label="Poster URL"
+                value={editingMovie.image}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    image: e.target.value,
+                  })
+                }
+                required
+                fullWidth
+              />
 
-            <TextField
-              label="Release Date"
-              type="date"
-              value={movieForm.releaseDate}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  releaseDate: event.target.value,
-                })
-              }
-              InputLabelProps={{
-                shrink: true,
-              }}
-              fullWidth
-            />
+              <TextField
+                label="Trailer URL"
+                value={editingMovie.trailerUrl}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    trailerUrl: e.target.value,
+                  })
+                }
+                required
+                fullWidth
+              />
 
-            <TextField
-              label="Poster URL"
-              value={movieForm.image}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  image: event.target.value,
-                })
-              }
-              fullWidth
-            />
+              <TextField
+                label="Description"
+                multiline
+                rows={3}
+                value={editingMovie.description}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    description: e.target.value,
+                  })
+                }
+                required
+                fullWidth
+              />
 
-            <TextField
-              label="Trailer URL"
-              value={movieForm.trailerUrl}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  trailerUrl: event.target.value,
-                })
-              }
-              fullWidth
-            />
+              <TextField
+                label="Duration (minutes)"
+                type="number"
+                value={editingMovie.duration}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    duration: Number(e.target.value),
+                  })
+                }
+                required
+                fullWidth
+                inputProps={{
+                  min: 1,
+                  max: 600,
+                }}
+              />
 
-            <TextField
-              label="Description"
-              value={movieForm.description}
-              onChange={(event) =>
-                setMovieForm({
-                  ...movieForm,
-                  description: event.target.value,
-                })
-              }
-              fullWidth
-              multiline
-              minRows={4}
-            />
-          </Stack>
+              <TextField
+                label="Release date"
+                type="date"
+                value={editingMovie.releaseDate}
+                onChange={(e) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    releaseDate: e.target.value,
+                  })
+                }
+                required
+                fullWidth
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                }}
+              />
+
+              <Divider />
+
+              <Typography variant="h6" fontWeight={700}>
+                Screening times & rooms
+              </Typography>
+
+              {editingMovie.screenings.length === 0 ? (
+                <Typography color="text.secondary">No screening time yet.</Typography>
+              ) : (
+                <Stack spacing={1}>
+                  {editingMovie.screenings.map((screening) => (
+                    <Stack
+                      key={screening.id}
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Chip
+                        icon={<CalendarMonth />}
+                        label={`${screening.time} · ${screening.room}`}
+                      />
+
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => removeScreening(screening.id)}
+                      >
+                        Remove
+                      </Button>
+                    </Stack>
+                  ))}
+                </Stack>
+              )}
+
+              <Stack
+                direction={{
+                  xs: 'column',
+                  sm: 'row',
+                }}
+                spacing={1}
+                sx={{
+                  alignItems: {
+                    xs: 'stretch',
+                    sm: 'center',
+                  },
+                }}
+              >
+                <TextField
+                  label="Time"
+                  type="time"
+                  value={newScreening.time}
+                  onChange={(e) =>
+                    setNewScreening({
+                      ...newScreening,
+                      time: e.target.value,
+                    })
+                  }
+                  required
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
+                />
+
+                <Select
+                  value={newScreening.room}
+                  onChange={(e) =>
+                    setNewScreening({
+                      ...newScreening,
+                      room: e.target.value,
+                    })
+                  }
+                  sx={{
+                    minWidth: 140,
+                  }}
+                >
+                  <MenuItem value="Room 1">Room 1</MenuItem>
+                  <MenuItem value="Room 2">Room 2</MenuItem>
+                  <MenuItem value="Room 3">Room 3</MenuItem>
+                  <MenuItem value="Room 4">Room 4</MenuItem>
+                </Select>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={addScreening}
+                  disabled={!newScreening.time || !newScreening.room}
+                >
+                  Add Screening
+                </Button>
+              </Stack>
+            </Stack>
+          )}
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setEditMovie(null)}>Cancel</Button>
+          <Button onClick={() => setEditingMovie(null)}>Cancel</Button>
 
-          <Button variant="contained" onClick={handleUpdateMovie}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (editingMovie) {
+                updateMovie(editingMovie);
+              }
+            }}
+          >
             Save Changes
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3000}
+        onClose={closeToast}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+      >
+        <Alert
+          onClose={closeToast}
+          severity={toast.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-export default MoviesPage;
+export default MovieListPage;

@@ -328,7 +328,7 @@ def get_screenings(movie_id):
 def create_screening(movie_id):
     data = request.get_json() or {}
 
-    screening_time = data.get("time")
+    screening_time = data.get("screening_time")
     room = data.get("room")
 
     if not screening_time:

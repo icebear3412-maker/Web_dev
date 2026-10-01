@@ -24,7 +24,6 @@ const publicRoutes: IRoute[] = [
   { path: '/forgot-password', component: ForgotPasswordPage, layout: null },
 ];
 
-
 const privateRoutes: IRoute[] = [];
 
 export { publicRoutes, privateRoutes };

@@ -74,7 +74,10 @@ const EventSection: React.FC = () => {
           >
             {Events.map((event) => (
               <SwiperSlide key={event.linkTo}>
-                <Box onClick={() => navigate(event.linkTo)}className="cgv-event-banner event-carousel-banner">
+                <Box
+                  onClick={() => navigate(event.linkTo)}
+                  className="cgv-event-banner event-carousel-banner"
+                >
                   <img src={event.image} alt={event.title} />
                 </Box>
               </SwiperSlide>
