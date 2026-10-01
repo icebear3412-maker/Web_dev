@@ -116,6 +116,30 @@ def update_movie(movie_id):
         conn.close()
 
 
+@movies_router.delete("/<movie_id>")
+@require_user(admin_only=True)
+def delete_movie(movie_id):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM movies WHERE id = %s RETURNING id", (movie_id,))
+            deleted = cur.fetchone()
+        if not deleted:
+            conn.rollback()
+            return jsonify({"error": "Movie not found"}), 404
+        conn.commit()
+        return jsonify({"message": "Movie deleted", "id": deleted["id"]})
+    except Exception as error:
+        conn.rollback()
+        if getattr(error, "pgcode", None) == "23503":
+            return jsonify({
+                "error": "This movie has bookings and cannot be deleted. Hide it instead."
+            }), 409
+        raise
+    finally:
+        conn.close()
+
+
 def is_json_value(field, value):
     if field in {"rating"}:
         return value is None or isinstance(value, (int, float))

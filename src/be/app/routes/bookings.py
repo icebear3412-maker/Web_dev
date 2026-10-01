@@ -14,7 +14,10 @@ def list_cinema_rooms():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, room_number, name, type, capacity FROM cinema_rooms ORDER BY room_number")
+            cur.execute(
+                "SELECT id, room_number, name, type, capacity, price_per_slot "
+                "FROM cinema_rooms ORDER BY room_number"
+            )
             rooms = cur.fetchall()
         return jsonify({"cinema_rooms": rooms})
     finally:
@@ -271,6 +274,36 @@ def list_my_bookings():
             )
             bookings = cur.fetchall()
         return jsonify({"bookings": bookings})
+    finally:
+        conn.close()
+
+
+@bookings_router.get("/check/<booking_ref>")
+def check_booking_ticket(booking_ref):
+    """Look up ticket details using the unguessable booking reference."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT b.booking_ref, b.status, b.total_amount,
+                          s.show_date, s.show_time, s.format,
+                          m.title AS movie_title, m.title_vn,
+                          COALESCE(json_agg(json_build_object(
+                              'seat_code', st.seat_code
+                          )) FILTER (WHERE st.id IS NOT NULL), '[]') AS seats
+                   FROM bookings b
+                   JOIN showtimes s ON s.id = b.showtime_id
+                   JOIN movies m ON m.id = s.movie_id
+                   LEFT JOIN booking_seats bs ON bs.booking_ref = b.booking_ref
+                   LEFT JOIN seats st ON st.id = bs.seat_id
+                   WHERE b.booking_ref = %s
+                   GROUP BY b.booking_ref, s.id, m.id""",
+                (booking_ref,),
+            )
+            booking = cur.fetchone()
+        if not booking:
+            return jsonify({"error": "Ticket not found"}), 404
+        return jsonify({"booking": booking})
     finally:
         conn.close()
 
