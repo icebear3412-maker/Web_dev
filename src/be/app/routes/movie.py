@@ -2,12 +2,9 @@ from flask import Blueprint, jsonify, request
 
 from app.db import get_connection
 
+
 movie_router = Blueprint("movie", __name__)
 
-
-# ============================================================
-# GET ALL MOVIES
-# ============================================================
 
 @movie_router.route("", methods=["GET"])
 def get_movies():
@@ -15,7 +12,6 @@ def get_movies():
 
     try:
         cursor = connection.cursor()
-
         cursor.execute(
             """
             SELECT
@@ -25,6 +21,7 @@ def get_movies():
                 duration,
                 release_date,
                 poster,
+                trailer_url,
                 status
             FROM movies
             ORDER BY id
@@ -32,7 +29,6 @@ def get_movies():
         )
 
         rows = cursor.fetchall()
-
         movies = []
 
         for row in rows:
@@ -42,27 +38,18 @@ def get_movies():
                     "title": row[1],
                     "genre": row[2],
                     "duration": row[3],
-                    "release_date": (
-                        row[4].isoformat()
-                        if row[4]
-                        else None
-                    ),
+                    "release_date": row[4].isoformat() if row[4] else None,
                     "poster": row[5],
-                    "status": row[6],
+                    "trailer_url": row[6],
+                    "status": row[7],
                 }
             )
 
         cursor.close()
-
         return jsonify(movies)
-
     finally:
         connection.close()
 
-
-# ============================================================
-# CREATE MOVIE
-# ============================================================
 
 @movie_router.route("", methods=["POST"])
 def create_movie():
@@ -73,14 +60,11 @@ def create_movie():
     duration = data.get("duration")
     release_date = data.get("release_date")
     poster = data.get("poster")
+    trailer_url = data.get("trailer_url")
     status = data.get("status", "showing")
 
     if not title:
-        return jsonify(
-            {
-                "error": "Title is required"
-            }
-        ), 400
+        return jsonify({"error": "Title is required"}), 400
 
     connection = get_connection()
 
@@ -96,10 +80,12 @@ def create_movie():
                     duration,
                     release_date,
                     poster,
+                    trailer_url,
                     status
                 )
             VALUES
                 (
+                    %s,
                     %s,
                     %s,
                     %s,
@@ -114,6 +100,7 @@ def create_movie():
                 duration,
                 release_date,
                 poster,
+                trailer_url,
                 status
             """,
             (
@@ -122,38 +109,33 @@ def create_movie():
                 duration,
                 release_date,
                 poster,
+                trailer_url,
                 status,
             ),
         )
 
         row = cursor.fetchone()
-
         connection.commit()
         cursor.close()
 
-        return jsonify(
-            {
-                "id": row[0],
-                "title": row[1],
-                "genre": row[2],
-                "duration": row[3],
-                "release_date": (
-                    row[4].isoformat()
-                    if row[4]
-                    else None
-                ),
-                "poster": row[5],
-                "status": row[6],
-            }
-        ), 201
-
+        return (
+            jsonify(
+                {
+                    "id": row[0],
+                    "title": row[1],
+                    "genre": row[2],
+                    "duration": row[3],
+                    "release_date": row[4].isoformat() if row[4] else None,
+                    "poster": row[5],
+                    "trailer_url": row[6],
+                    "status": row[7],
+                }
+            ),
+            201,
+        )
     finally:
         connection.close()
 
-
-# ============================================================
-# UPDATE MOVIE
-# ============================================================
 
 @movie_router.route("/<int:movie_id>", methods=["PATCH"])
 def update_movie(movie_id):
@@ -165,6 +147,7 @@ def update_movie(movie_id):
         "duration",
         "release_date",
         "poster",
+        "trailer_url",
         "status",
     }
 
@@ -177,11 +160,7 @@ def update_movie(movie_id):
             values.append(data[field])
 
     if not fields:
-        return jsonify(
-            {
-                "error": "No fields to update"
-            }
-        ), 400
+        return jsonify({"error": "No fields to update"}), 400
 
     values.append(movie_id)
 
@@ -201,22 +180,17 @@ def update_movie(movie_id):
                 duration,
                 release_date,
                 poster,
+                trailer_url,
                 status
         """
 
         cursor.execute(query, values)
-
         row = cursor.fetchone()
 
         if row is None:
             connection.rollback()
             cursor.close()
-
-            return jsonify(
-                {
-                    "error": "Movie not found"
-                }
-            ), 404
+            return jsonify({"error": "Movie not found"}), 404
 
         connection.commit()
         cursor.close()
@@ -227,23 +201,15 @@ def update_movie(movie_id):
                 "title": row[1],
                 "genre": row[2],
                 "duration": row[3],
-                "release_date": (
-                    row[4].isoformat()
-                    if row[4]
-                    else None
-                ),
+                "release_date": row[4].isoformat() if row[4] else None,
                 "poster": row[5],
-                "status": row[6],
+                "trailer_url": row[6],
+                "status": row[7],
             }
         )
-
     finally:
         connection.close()
 
-
-# ============================================================
-# DELETE MOVIE
-# ============================================================
 
 @movie_router.route("/<int:movie_id>", methods=["DELETE"])
 def delete_movie(movie_id):
@@ -266,12 +232,7 @@ def delete_movie(movie_id):
         if result is None:
             connection.rollback()
             cursor.close()
-
-            return jsonify(
-                {
-                    "error": "Movie not found"
-                }
-            ), 404
+            return jsonify({"error": "Movie not found"}), 404
 
         connection.commit()
         cursor.close()
@@ -282,26 +243,17 @@ def delete_movie(movie_id):
                 "message": "Movie deleted successfully",
             }
         )
-
     finally:
         connection.close()
 
 
-# ============================================================
-# GET SCREENINGS FOR A MOVIE
-# ============================================================
-
-@movie_router.route(
-    "/<int:movie_id>/screenings",
-    methods=["GET"],
-)
+@movie_router.route("/<int:movie_id>/screenings", methods=["GET"])
 def get_screenings(movie_id):
     connection = get_connection()
 
     try:
         cursor = connection.cursor()
 
-        # Check movie exists
         cursor.execute(
             """
             SELECT id
@@ -315,12 +267,7 @@ def get_screenings(movie_id):
 
         if movie is None:
             cursor.close()
-
-            return jsonify(
-                {
-                    "error": "Movie not found"
-                }
-            ), 404
+            return jsonify({"error": "Movie not found"}), 404
 
         cursor.execute(
             """
@@ -336,7 +283,6 @@ def get_screenings(movie_id):
         )
 
         rows = cursor.fetchall()
-
         screenings = []
 
         for row in rows:
@@ -349,21 +295,12 @@ def get_screenings(movie_id):
             )
 
         cursor.close()
-
         return jsonify(screenings)
-
     finally:
         connection.close()
 
 
-# ============================================================
-# CREATE SCREENING
-# ============================================================
-
-@movie_router.route(
-    "/<int:movie_id>/screenings",
-    methods=["POST"],
-)
+@movie_router.route("/<int:movie_id>/screenings", methods=["POST"])
 def create_screening(movie_id):
     data = request.get_json() or {}
 
@@ -371,25 +308,16 @@ def create_screening(movie_id):
     room = data.get("room")
 
     if not screening_time:
-        return jsonify(
-            {
-                "error": "Time is required"
-            }
-        ), 400
+        return jsonify({"error": "Time is required"}), 400
 
     if not room:
-        return jsonify(
-            {
-                "error": "Room is required"
-            }
-        ), 400
+        return jsonify({"error": "Room is required"}), 400
 
     connection = get_connection()
 
     try:
         cursor = connection.cursor()
 
-        # Check movie exists
         cursor.execute(
             """
             SELECT id
@@ -403,12 +331,7 @@ def create_screening(movie_id):
 
         if movie is None:
             cursor.close()
-
-            return jsonify(
-                {
-                    "error": "Movie not found"
-                }
-            ), 404
+            return jsonify({"error": "Movie not found"}), 404
 
         cursor.execute(
             """
@@ -437,25 +360,22 @@ def create_screening(movie_id):
         )
 
         row = cursor.fetchone()
-
         connection.commit()
         cursor.close()
 
-        return jsonify(
-            {
-                "id": row[0],
-                "time": row[1].strftime("%H:%M"),
-                "room": row[2],
-            }
-        ), 201
-
+        return (
+            jsonify(
+                {
+                    "id": row[0],
+                    "time": row[1].strftime("%H:%M"),
+                    "room": row[2],
+                }
+            ),
+            201,
+        )
     finally:
         connection.close()
 
-
-# ============================================================
-# DELETE SCREENING
-# ============================================================
 
 @movie_router.route(
     "/<int:movie_id>/screenings/<int:screening_id>",
@@ -485,12 +405,7 @@ def delete_screening(movie_id, screening_id):
         if result is None:
             connection.rollback()
             cursor.close()
-
-            return jsonify(
-                {
-                    "error": "Screening not found"
-                }
-            ), 404
+            return jsonify({"error": "Screening not found"}), 404
 
         connection.commit()
         cursor.close()
@@ -501,6 +416,5 @@ def delete_screening(movie_id, screening_id):
                 "message": "Screening deleted successfully",
             }
         )
-
     finally:
         connection.close()

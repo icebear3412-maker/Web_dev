@@ -21,7 +21,6 @@ def init_db():
     try:
         cursor = connection.cursor()
 
-        # Movies table
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS movies (
@@ -31,12 +30,12 @@ def init_db():
                 duration INTEGER,
                 release_date DATE,
                 poster TEXT,
+                trailer_url TEXT,
                 status VARCHAR(20) NOT NULL DEFAULT 'showing'
             )
             """
         )
 
-        # Screenings table
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS screenings (
@@ -47,6 +46,13 @@ def init_db():
                 screening_time TIME NOT NULL,
                 room VARCHAR(100) NOT NULL
             )
+            """
+        )
+
+        cursor.execute(
+            """
+            ALTER TABLE movies
+            ADD COLUMN IF NOT EXISTS trailer_url TEXT
             """
         )
 

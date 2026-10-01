@@ -34,6 +34,7 @@ const emptyMovie: MovieForm = {
   title: '',
   genre: '',
   image: '',
+  trailerUrl: '',
   duration: 120,
   releaseDate: '',
 };
@@ -73,6 +74,7 @@ const MovieListPage: React.FC = () => {
         title: movie.title || '',
         genre: movie.genre || '',
         image: movie.poster || '',
+        trailerUrl: movie.trailer_url || '',
         duration: Number(movie.duration) || 0,
         releaseDate: movie.release_date || '',
         status: movie.status === 'showing' ? 'Showing' : 'Hidden',
@@ -186,6 +188,7 @@ const MovieListPage: React.FC = () => {
           duration: Number(movie.duration),
           release_date: movie.releaseDate || null,
           poster: movie.image,
+          trailer_url: movie.trailerUrl,
         }),
       });
 
@@ -205,6 +208,7 @@ const MovieListPage: React.FC = () => {
                 duration: Number(updatedMovie.duration) || 0,
                 releaseDate: updatedMovie.release_date || '',
                 image: updatedMovie.poster || '',
+                trailerUrl: updatedMovie.trailer_url || '',
               }
             : item,
         ),
@@ -237,6 +241,7 @@ const MovieListPage: React.FC = () => {
           duration: Number(newMovie.duration),
           release_date: newMovie.releaseDate || null,
           poster: newMovie.image,
+          trailer_url: newMovie.trailerUrl,
           status: 'showing',
         }),
       });
@@ -252,6 +257,7 @@ const MovieListPage: React.FC = () => {
         title: createdMovie.title || '',
         genre: createdMovie.genre || '',
         image: createdMovie.poster || '',
+        trailerUrl: createdMovie.trailer_url || '',
         duration: Number(createdMovie.duration) || 0,
         releaseDate: createdMovie.release_date || '',
         status: createdMovie.status === 'showing' ? 'Showing' : 'Hidden',
@@ -809,6 +815,19 @@ const MovieListPage: React.FC = () => {
                   setEditingMovie({
                     ...editingMovie,
                     image: event.target.value,
+                  })
+                }
+                fullWidth
+              />
+
+              <TextField
+                label="Trailer URL"
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={editingMovie.trailerUrl}
+                onChange={(event) =>
+                  setEditingMovie({
+                    ...editingMovie,
+                    trailerUrl: event.target.value,
                   })
                 }
                 fullWidth

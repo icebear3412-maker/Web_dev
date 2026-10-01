@@ -21,6 +21,7 @@ interface MovieItem {
   title: string;
   genre: string;
   image: string;
+  trailerUrl: string;
   duration: number;
   releaseDate: string;
   status: 'Showing' | 'Hidden';
@@ -31,14 +32,9 @@ interface MovieForm {
   title: string;
   genre: string;
   image: string;
+  trailerUrl: string;
   duration: number;
   releaseDate: string;
 }
 
-export type {
-  IDefaultReactProps,
-  IRoute,
-  Screening,
-  MovieItem,
-  MovieForm,
-};
+export type { IDefaultReactProps, IRoute, Screening, MovieItem, MovieForm };
