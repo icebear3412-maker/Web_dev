@@ -72,6 +72,19 @@ button {
   justify-content: space-between;
   gap: 24px;
 }
+.brand-logo-link {
+  flex: 0 0 auto;
+  min-width: 0 !important;
+  padding: 4px !important;
+  border-radius: 0 !important;
+}
+.brand-logo-link img {
+  display: block;
+  width: auto;
+  height: 64px;
+  max-width: 190px;
+  object-fit: contain;
+}
 .main-menu {
   display: flex;
   align-items: center;
@@ -608,6 +621,10 @@ button {
   }
   .main-header-inner {
     min-height: auto;
+  }
+  .brand-logo-link img {
+    height: 48px;
+    max-width: 145px;
   }
   .main-menu {
     gap: 0;
