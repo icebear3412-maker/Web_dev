@@ -51,8 +51,7 @@ const ForgotPasswordPage: React.FC = () => {
           content: '""',
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(circle, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.85) 100%)',
+          background: 'radial-gradient(circle, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.85) 100%)',
           zIndex: 1,
         },
       }}

@@ -140,8 +140,7 @@ const SignUpPage: React.FC = () => {
           content: '""',
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(circle, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.85) 100%)',
+          background: 'radial-gradient(circle, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.85) 100%)',
           zIndex: 1,
         },
       }}
@@ -196,7 +195,8 @@ const SignUpPage: React.FC = () => {
             textShadow: '0 1px 4px rgba(0,0,0,0.9)',
           }}
         >
-          Khám phá không gian điện ảnh đỉnh cao, đặt vé nhanh chóng và nhận nhiều ưu đãi dành riêng cho thành viên.
+          Khám phá không gian điện ảnh đỉnh cao, đặt vé nhanh chóng và nhận nhiều ưu đãi dành riêng
+          cho thành viên.
         </Typography>
       </Box>
 
@@ -329,10 +329,7 @@ const SignUpPage: React.FC = () => {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                     {showPassword ? (
                       <VisibilityOff sx={{ color: '#888' }} />
                     ) : (
@@ -375,9 +372,7 @@ const SignUpPage: React.FC = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     edge="end"
                   >
                     {showConfirmPassword ? (
