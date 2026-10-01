@@ -1,243 +1,180 @@
+from uuid import uuid4
+
 from flask import Blueprint, jsonify, request
 
-from app.db import get_connection
+from app.db import get_db_connection
 
 
 movie_router = Blueprint("movie", __name__)
 
 
+def movie_to_json(row):
+    return {
+        "id": str(row["id"]),
+        "title": row["title"],
+        "genre": row["genre"] or "",
+        "duration": row["duration"] or "",
+        "release_date": row["release_date"] or "",
+        "poster": row["poster"] or "",
+        "trailer_url": row["trailer_url"] or "",
+        "description": row["synopsis"] or "",
+        "status": "Showing"
+        if str(row["status"]).lower() == "showing"
+        else "Hidden",
+    }
+
+
 @movie_router.route("", methods=["GET"])
 def get_movies():
-    connection = get_connection()
+    conn = get_db_connection()
 
     try:
-        cursor = connection.cursor()
-
-        cursor.execute(
-            """
-            SELECT
-                id,
-                title,
-                genre,
-                duration,
-                release_date,
-                poster,
-                trailer_url,
-                description,
-                status
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, title, genre, duration, release_date,
+                   poster, trailer_url, synopsis, status
             FROM movies
-            ORDER BY id
-            """
-        )
+            ORDER BY title
+        """)
 
-        rows = cursor.fetchall()
-        movies = []
-
-        for row in rows:
-            movies.append(
-                {
-                    "id": row[0],
-                    "title": row[1],
-                    "genre": row[2],
-                    "duration": row[3],
-                    "release_date": row[4].isoformat() if row[4] else None,
-                    "poster": row[5],
-                    "trailer_url": row[6],
-                    "description": row[7],
-                    "status": row[8],
-                }
-            )
-
-        cursor.close()
-
-        return jsonify(movies)
-
+        return jsonify([movie_to_json(row) for row in cur.fetchall()])
     finally:
-        connection.close()
+        conn.close()
 
 
 @movie_router.route("", methods=["POST"])
 def create_movie():
     data = request.get_json() or {}
 
-    title = data.get("title")
-    genre = data.get("genre")
-    duration = data.get("duration")
-    release_date = data.get("release_date")
-    poster = data.get("poster")
-    trailer_url = data.get("trailer_url")
-    description = data.get("description")
-    status = data.get("status", "showing")
+    title = str(data.get("title", "")).strip()
 
     if not title:
         return jsonify({"error": "Title is required"}), 400
 
-    connection = get_connection()
+    status = str(data.get("status", "showing")).lower()
+
+    if status not in {"showing", "hidden"}:
+        return jsonify({"error": "Invalid movie status"}), 400
+
+    conn = get_db_connection()
 
     try:
-        cursor = connection.cursor()
+        cur = conn.cursor()
 
-        cursor.execute(
-            """
-            INSERT INTO movies
-                (
-                    title,
-                    genre,
-                    duration,
-                    release_date,
-                    poster,
-                    trailer_url,
-                    description,
-                    status
-                )
-            VALUES
-                (
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s
-                )
-            RETURNING
-                id,
-                title,
-                genre,
-                duration,
-                release_date,
-                poster,
-                trailer_url,
-                description,
-                status
-            """,
-            (
-                title,
-                genre,
-                duration,
-                release_date,
-                poster,
-                trailer_url,
-                description,
-                status,
-            ),
-        )
+        cur.execute("""
+            INSERT INTO movies (
+                id, title, genre, duration, release_date,
+                poster, trailer_url, synopsis, status
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, title, genre, duration, release_date,
+                      poster, trailer_url, synopsis, status
+        """, (
+            str(uuid4()),
+            title,
+            data.get("genre", ""),
+            str(data.get("duration", "")),
+            str(data.get("release_date", "")),
+            data.get("poster", ""),
+            data.get("trailer_url", ""),
+            data.get("description", ""),
+            status,
+        ))
 
-        row = cursor.fetchone()
+        movie = cur.fetchone()
+        conn.commit()
 
-        connection.commit()
-        cursor.close()
+        return jsonify(movie_to_json(movie)), 201
 
-        return (
-            jsonify(
-                {
-                    "id": row[0],
-                    "title": row[1],
-                    "genre": row[2],
-                    "duration": row[3],
-                    "release_date": row[4].isoformat() if row[4] else None,
-                    "poster": row[5],
-                    "trailer_url": row[6],
-                    "description": row[7],
-                    "status": row[8],
-                }
-            ),
-            201,
-        )
-
+    except Exception:
+        conn.rollback()
+        raise
     finally:
-        connection.close()
+        conn.close()
 
 
-@movie_router.route("/<int:movie_id>", methods=["PATCH"])
+@movie_router.route("/<movie_id>", methods=["PATCH"])
 def update_movie(movie_id):
     data = request.get_json() or {}
 
-    allowed_fields = {
-        "title",
-        "genre",
-        "duration",
-        "release_date",
-        "poster",
-        "trailer_url",
-        "description",
-        "status",
+    mapping = {
+        "title": "title",
+        "genre": "genre",
+        "duration": "duration",
+        "release_date": "release_date",
+        "poster": "poster",
+        "trailer_url": "trailer_url",
+        "description": "synopsis",
+        "status": "status",
     }
 
     fields = []
     values = []
 
-    for field in allowed_fields:
-        if field in data:
-            fields.append(f"{field} = %s")
-            values.append(data[field])
+    for key, column in mapping.items():
+        if key not in data:
+            continue
+
+        value = data[key]
+
+        if key == "status":
+            value = str(value).lower()
+
+            if value not in {"showing", "hidden"}:
+                return jsonify({"error": "Invalid movie status"}), 400
+
+        if key in {"duration", "release_date"}:
+            value = str(value)
+
+        fields.append(f"{column} = %s")
+        values.append(value)
 
     if not fields:
         return jsonify({"error": "No fields to update"}), 400
 
     values.append(movie_id)
 
-    connection = get_connection()
+    conn = get_db_connection()
 
     try:
-        cursor = connection.cursor()
+        cur = conn.cursor()
 
-        query = f"""
+        cur.execute(
+            f"""
             UPDATE movies
-            SET {", ".join(fields)}
+            SET {", ".join(fields)}, updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
-            RETURNING
-                id,
-                title,
-                genre,
-                duration,
-                release_date,
-                poster,
-                trailer_url,
-                description,
-                status
-        """
-
-        cursor.execute(query, values)
-
-        row = cursor.fetchone()
-
-        if row is None:
-            connection.rollback()
-            cursor.close()
-
-            return jsonify({"error": "Movie not found"}), 404
-
-        connection.commit()
-        cursor.close()
-
-        return jsonify(
-            {
-                "id": row[0],
-                "title": row[1],
-                "genre": row[2],
-                "duration": row[3],
-                "release_date": row[4].isoformat() if row[4] else None,
-                "poster": row[5],
-                "trailer_url": row[6],
-                "description": row[7],
-                "status": row[8],
-            }
+            RETURNING id, title, genre, duration, release_date,
+                      poster, trailer_url, synopsis, status
+            """,
+            values,
         )
 
+        movie = cur.fetchone()
+
+        if movie is None:
+            conn.rollback()
+            return jsonify({"error": "Movie not found"}), 404
+
+        conn.commit()
+
+        return jsonify(movie_to_json(movie))
+
+    except Exception:
+        conn.rollback()
+        raise
     finally:
-        connection.close()
+        conn.close()
 
 
-@movie_router.route("/<int:movie_id>", methods=["DELETE"])
+@movie_router.route("/<movie_id>", methods=["DELETE"])
 def delete_movie(movie_id):
-    connection = get_connection()
+    conn = get_db_connection()
 
     try:
-        cursor = connection.cursor()
+        cur = conn.cursor()
 
-        cursor.execute(
+        cur.execute(
             """
             DELETE FROM movies
             WHERE id = %s
@@ -246,204 +183,223 @@ def delete_movie(movie_id):
             (movie_id,),
         )
 
-        result = cursor.fetchone()
-
-        if result is None:
-            connection.rollback()
-            cursor.close()
-
-            return jsonify({"error": "Movie not found"}), 404
-
-        connection.commit()
-        cursor.close()
-
-        return jsonify(
-            {
-                "id": movie_id,
-                "message": "Movie deleted successfully",
-            }
-        )
-
-    finally:
-        connection.close()
-
-
-@movie_router.route("/<int:movie_id>/screenings", methods=["GET"])
-def get_screenings(movie_id):
-    connection = get_connection()
-
-    try:
-        cursor = connection.cursor()
-
-        cursor.execute(
-            """
-            SELECT id
-            FROM movies
-            WHERE id = %s
-            """,
-            (movie_id,),
-        )
-
-        movie = cursor.fetchone()
+        movie = cur.fetchone()
 
         if movie is None:
-            cursor.close()
-
+            conn.rollback()
             return jsonify({"error": "Movie not found"}), 404
 
-        cursor.execute(
+        conn.commit()
+
+        return jsonify({
+            "id": str(movie["id"]),
+            "message": "Movie deleted successfully",
+        })
+
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+@movie_router.route("/rooms", methods=["GET"])
+def get_rooms():
+    conn = get_db_connection()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT room_number, name, type
+            FROM cinema_rooms
+            ORDER BY room_number
+        """)
+
+        return jsonify([
+            {
+                "room_number": row["room_number"],
+                "name": row["name"] or "",
+                "type": row["type"] or "",
+            }
+            for row in cur.fetchall()
+        ])
+    finally:
+        conn.close()
+
+
+@movie_router.route("/<movie_id>/screenings", methods=["GET"])
+def get_screenings(movie_id):
+    conn = get_db_connection()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
             """
             SELECT
-                id,
-                screening_time,
-                room
-            FROM screenings
-            WHERE movie_id = %s
-            ORDER BY screening_time
+                st.id,
+                st.show_date,
+                st.show_time,
+                st.cinema_room_number,
+                cr.name AS room_name,
+                cr.type AS room_type
+            FROM showtimes st
+            JOIN cinema_rooms cr
+                ON cr.room_number = st.cinema_room_number
+            WHERE st.movie_id = %s
+            ORDER BY st.show_date, st.show_time
             """,
             (movie_id,),
         )
 
-        rows = cursor.fetchall()
-        screenings = []
-
-        for row in rows:
-            screenings.append(
-                {
-                    "id": row[0],
-                    "time": row[1].strftime("%H:%M"),
-                    "room": row[2],
-                }
-            )
-
-        cursor.close()
-
-        return jsonify(screenings)
-
+        return jsonify([
+            {
+                "id": str(row["id"]),
+                "date": row["show_date"] or "",
+                "time": row["show_time"] or "",
+                "room": str(row["cinema_room_number"]),
+                "room_name": row["room_name"] or "",
+                "room_type": row["room_type"] or "",
+            }
+            for row in cur.fetchall()
+        ])
     finally:
-        connection.close()
+        conn.close()
 
 
-@movie_router.route("/<int:movie_id>/screenings", methods=["POST"])
+@movie_router.route("/<movie_id>/screenings", methods=["POST"])
 def create_screening(movie_id):
     data = request.get_json() or {}
 
-    screening_time = data.get("screening_time")
-    room = data.get("room")
+    show_date = str(data.get("show_date", "")).strip()
+    show_time = str(data.get("show_time", "")).strip()
+    room_number = data.get("cinema_room_number")
 
-    if not screening_time:
-        return jsonify({"error": "Time is required"}), 400
-
-    if not room:
-        return jsonify({"error": "Room is required"}), 400
-
-    connection = get_connection()
+    if not show_date or not show_time or room_number is None:
+        return jsonify({
+            "error": "Date, time and cinema room are required"
+        }), 400
 
     try:
-        cursor = connection.cursor()
+        room_number = int(room_number)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid cinema room number"}), 400
 
-        cursor.execute(
-            """
-            SELECT id
-            FROM movies
-            WHERE id = %s
-            """,
+    conn = get_db_connection()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT id FROM movies WHERE id = %s",
             (movie_id,),
         )
 
-        movie = cursor.fetchone()
-
-        if movie is None:
-            cursor.close()
-
+        if cur.fetchone() is None:
             return jsonify({"error": "Movie not found"}), 404
 
-        cursor.execute(
+        cur.execute(
             """
-            INSERT INTO screenings
-                (
-                    movie_id,
-                    screening_time,
-                    room
-                )
-            VALUES
-                (
-                    %s,
-                    %s,
-                    %s
-                )
-            RETURNING
-                id,
-                screening_time,
-                room
+            SELECT room_number, name, type
+            FROM cinema_rooms
+            WHERE room_number = %s
+            """,
+            (room_number,),
+        )
+
+        room = cur.fetchone()
+
+        if room is None:
+            return jsonify({"error": "Cinema room not found"}), 404
+
+        cur.execute(
+            """
+            SELECT id
+            FROM showtimes
+            WHERE movie_id = %s
+              AND cinema_room_number = %s
+              AND show_date = %s
+              AND show_time = %s
+            """,
+            (movie_id, room_number, show_date, show_time),
+        )
+
+        if cur.fetchone() is not None:
+            return jsonify({"error": "Showtime already exists"}), 409
+
+        cur.execute(
+            """
+            INSERT INTO showtimes (
+                id, movie_id, cinema_room_number,
+                show_date, show_time, format
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id, show_date, show_time, cinema_room_number
             """,
             (
+                str(uuid4()),
                 movie_id,
-                screening_time,
-                room,
+                room_number,
+                show_date,
+                show_time,
+                data.get("format", ""),
             ),
         )
 
-        row = cursor.fetchone()
+        row = cur.fetchone()
+        conn.commit()
 
-        connection.commit()
-        cursor.close()
+        return jsonify({
+            "id": str(row["id"]),
+            "date": row["show_date"],
+            "time": row["show_time"],
+            "room": str(row["cinema_room_number"]),
+            "room_name": room["name"] or "",
+            "room_type": room["type"] or "",
+        }), 201
 
-        return (
-            jsonify(
-                {
-                    "id": row[0],
-                    "time": row[1].strftime("%H:%M"),
-                    "room": row[2],
-                }
-            ),
-            201,
-        )
-
+    except Exception:
+        conn.rollback()
+        raise
     finally:
-        connection.close()
+        conn.close()
 
 
 @movie_router.route(
-    "/<int:movie_id>/screenings/<int:screening_id>",
+    "/<movie_id>/screenings/<screening_id>",
     methods=["DELETE"],
 )
 def delete_screening(movie_id, screening_id):
-    connection = get_connection()
+    conn = get_db_connection()
 
     try:
-        cursor = connection.cursor()
+        cur = conn.cursor()
 
-        cursor.execute(
+        cur.execute(
             """
-            DELETE FROM screenings
-            WHERE id = %s
-              AND movie_id = %s
+            DELETE FROM showtimes
+            WHERE id = %s AND movie_id = %s
             RETURNING id
             """,
-            (
-                screening_id,
-                movie_id,
-            ),
+            (screening_id, movie_id),
         )
 
-        result = cursor.fetchone()
+        row = cur.fetchone()
 
-        if result is None:
-            connection.rollback()
-            cursor.close()
+        if row is None:
+            conn.rollback()
+            return jsonify({"error": "Showtime not found"}), 404
 
-            return jsonify({"error": "Screening not found"}), 404
+        conn.commit()
 
-        connection.commit()
-        cursor.close()
+        return jsonify({
+            "id": str(row["id"]),
+            "message": "Showtime deleted successfully",
+        })
 
-        return jsonify(
-            {
-                "id": screening_id,
-                "message": "Screening deleted successfully",
-            }
-        )
-
+    except Exception:
+        conn.rollback()
+        raise
     finally:
-        connection.close()
+        conn.close()

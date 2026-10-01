@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
 
-from app.db import init_db
 from app.routes.auth import auth_router
 from app.routes.movie import movie_router
 
@@ -18,9 +17,6 @@ server.register_blueprint(
     movie_router,
     url_prefix="/movies",
 )
-
-init_db()
-
 
 if __name__ == "__main__":
     server.run(

@@ -1,8 +1,8 @@
+import type { FC } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
-import type { FC, ReactNode } from 'react';
 
 interface IDefaultReactProps {
-  children: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface IRoute {
@@ -12,19 +12,20 @@ interface IRoute {
 }
 
 interface Screening {
-  id: number;
+  id: string;
   time: string;
+  date: string;
   room: string;
 }
 
 interface MovieItem {
-  id: number;
+  id: string;
   title: string;
   genre: string;
   image: string;
   trailerUrl: string;
   description: string;
-  duration: number;
+  duration: string;
   releaseDate: string;
   status: 'Showing' | 'Hidden';
   screenings: Screening[];
@@ -58,13 +59,6 @@ interface IButtonWithIconAndDisplayText {
   icon: SvgIconComponent;
 }
 
-interface IMovieCard {
-  title: string;
-  age: number;
-  image: string;
-  linkTo: string;
-}
-
 export type {
   IDefaultReactProps,
   IRoute,
@@ -73,6 +67,5 @@ export type {
   MovieForm,
   ICardWithLink,
   ICardWithDescription,
-  IMovieCard,
   IButtonWithIconAndDisplayText,
 };
