@@ -1,7 +1,7 @@
 """Create the initial SV Cinema schema.
 
 Revision ID: 20260918_0001
-Revises: 
+Revises:
 Create Date: 2026-09-18
 """
 
@@ -14,12 +14,14 @@ depends_on = None
 
 
 def upgrade() -> None:
-    #Let only one app process run this migration at a time.
+    """Create the complete database schema and its initial cinema data."""
+
+    #Prevent two application instances from running this migration concurrently.
     op.execute("SELECT pg_advisory_xact_lock(74839201);")
 
-    #Store user accounts and contact details.
+    #Store customer and administrator accounts.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE users (
             id VARCHAR(255) PRIMARY KEY, name VARCHAR(255) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL, username VARCHAR(255), phone VARCHAR(50),
             password VARCHAR(255) NOT NULL, role VARCHAR(50) DEFAULT 'user',
@@ -28,50 +30,49 @@ def upgrade() -> None:
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
     """)
-    
-    #Store movie details used by showtimes and bookings.
+
+    #Store movie information displayed by the application.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS movies (
-            id VARCHAR(255) PRIMARY KEY, title VARCHAR(255) NOT NULL, title_vn VARCHAR(255),
-            genre TEXT, genre_en TEXT, duration VARCHAR(50), release_date VARCHAR(50),
+        CREATE TABLE movies (
+            id VARCHAR(255) PRIMARY KEY, title VARCHAR(255) NOT NULL,
+            genre TEXT, duration VARCHAR(50), release_date VARCHAR(50),
             age_rating VARCHAR(50), rating REAL DEFAULT 0, votes INTEGER DEFAULT 0,
             status VARCHAR(50) DEFAULT 'showing', featured BOOLEAN DEFAULT FALSE,
             director TEXT, "cast" TEXT, language VARCHAR(100), synopsis TEXT,
-            synopsis_en TEXT, poster TEXT, backdrop TEXT, formats TEXT,
-            base_price INTEGER DEFAULT 100000,
-            CONSTRAINT movies_base_price_nonnegative CHECK (base_price >= 0),
-            trailer_url TEXT,
+            poster TEXT, backdrop TEXT, formats TEXT,
+            base_price INTEGER DEFAULT 100000 CHECK (base_price >= 0), trailer_url TEXT,
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
     """)
 
-    #A cinema can contain several rooms.
+    #Store physical cinema locations.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS cinemas (
+        CREATE TABLE cinemas (
             id VARCHAR(255) PRIMARY KEY, name VARCHAR(255) NOT NULL,
             city VARCHAR(100) NOT NULL, address TEXT,
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
     """)
-    #Store each screening room.
+
+    #Store the rooms belonging to each cinema. Room size is defined by its row and column totals rather than a separate capacity value.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS cinema_rooms (
-            id VARCHAR(255) PRIMARY KEY, room_number INTEGER UNIQUE NOT NULL,
+        CREATE TABLE cinema_rooms (
+            id VARCHAR(255) PRIMARY KEY,
             cinema_id VARCHAR(255) NOT NULL REFERENCES cinemas(id) ON DELETE RESTRICT,
-            name VARCHAR(255) NOT NULL, type VARCHAR(100), capacity INTEGER DEFAULT 100,
+            type VARCHAR(100) NOT NULL,
+            total_rows INTEGER NOT NULL CHECK (total_rows > 0),
+            total_cols INTEGER NOT NULL CHECK (total_cols > 0),
             price_per_slot INTEGER DEFAULT 5000000, features TEXT,
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
     """)
-    #Add the cinema link when upgrading an older database.
-    op.execute("ALTER TABLE cinema_rooms ADD COLUMN IF NOT EXISTS cinema_id VARCHAR(255);")
 
-    #Store the images shown for each room.
+    #Store multiple display images for each cinema room.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS cinema_room_images (
+        CREATE TABLE cinema_room_images (
             id VARCHAR(255) PRIMARY KEY,
             cinema_room_id VARCHAR(255) NOT NULL REFERENCES cinema_rooms(id) ON DELETE CASCADE,
             image_url TEXT NOT NULL, sort_order INTEGER DEFAULT 0,
@@ -80,36 +81,34 @@ def upgrade() -> None:
         );
     """)
 
-    #Store the seats available in each room.
+    #Store the seats generated for each room. A seat code only needs to be unique inside its own room, so different rooms can both contain seat A1.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS seats (
+        CREATE TABLE seats (
             id VARCHAR(255) PRIMARY KEY,
             cinema_room_id VARCHAR(255) NOT NULL REFERENCES cinema_rooms(id) ON DELETE CASCADE,
-            seat_code VARCHAR(20) NOT NULL, row_label VARCHAR(10), seat_number INTEGER,
-            seat_type VARCHAR(50) DEFAULT 'standard',
+            seat_code VARCHAR(20) NOT NULL, seat_type VARCHAR(50) DEFAULT 'standard',
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (cinema_room_id, seat_code)
         );
     """)
 
-    #Store when and where each movie is shown.
+    #Connect a movie to a room and a date/time. The unique constraint prevents 2 movies from being scheduled in the same room at the same time.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS showtimes (
+        CREATE TABLE showtimes (
             id VARCHAR(255) PRIMARY KEY,
             movie_id VARCHAR(255) NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
-            cinema_room_number INTEGER NOT NULL REFERENCES cinema_rooms(room_number) ON DELETE RESTRICT,
+            cinema_room_id VARCHAR(255) NOT NULL REFERENCES cinema_rooms(id) ON DELETE RESTRICT,
             show_date DATE NOT NULL, show_time TIME NOT NULL, format VARCHAR(50),
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT showtimes_room_start_key
-                UNIQUE (cinema_room_number, show_date, show_time)
+            UNIQUE (cinema_room_id, show_date, show_time)
         );
     """)
 
-    #Link each booking to a user and a showtime.
+    #Store the main booking record for a user and showtime.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS bookings (
+        CREATE TABLE bookings (
             booking_ref VARCHAR(255) PRIMARY KEY,
             user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
             showtime_id VARCHAR(255) NOT NULL REFERENCES showtimes(id) ON DELETE RESTRICT,
@@ -120,9 +119,9 @@ def upgrade() -> None:
         );
     """)
 
-    #Store the seats selected for each booking.
+    #Connect selected seats to a booking. A seat can only be booked once for the same showtime.
     op.execute("""
-        CREATE TABLE IF NOT EXISTS booking_seats (
+        CREATE TABLE booking_seats (
             id VARCHAR(255) PRIMARY KEY,
             booking_ref VARCHAR(255) NOT NULL REFERENCES bookings(booking_ref) ON DELETE CASCADE,
             showtime_id VARCHAR(255) NOT NULL REFERENCES showtimes(id) ON DELETE RESTRICT,
@@ -133,134 +132,55 @@ def upgrade() -> None:
         );
     """)
 
-    #Add columns that may be missing from older databases.
-    additions = {
-        "users": [("updated_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")],
-        "movies": [("created_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"), ("updated_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")],
-        "cinema_rooms": [("room_number", "INTEGER"), ("cinema_id", "VARCHAR(255)"), ("created_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"), ("updated_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")],
-        "showtimes": [("cinema_room_number", "INTEGER"), ("created_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP"), ("updated_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")],
-        "bookings": [("updated_at", "TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP")],
-    }
-    for table, columns in additions.items():
-        for name, definition in columns:
-            op.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {name} {definition};")
-
-    #Create three starter cinemas. Administrators can add more through the API.
+    #Create three initial cinema locations for a new database.
     op.execute("""
-        INSERT INTO cinemas (id, name, city, address)
-        VALUES
-            ('default-cinema-1', 'Cinema 1', 'City 1', 'Address 1'),
-            ('default-cinema-2', 'Cinema 2', 'City 2', 'Address 2'),
-            ('default-cinema-3', 'Cinema 3', 'City 3', 'Address 3')
-        ON CONFLICT (id) DO NOTHING;
+        INSERT INTO cinemas (id, name, city, address) VALUES
+            ('default-cinema-1', 'Rạp phim 1', 'Thành phố 1', 'Địa chỉ 1'),
+            ('default-cinema-2', 'Rạp phim 2', 'Thành phố 2', 'Địa chỉ 2'),
+            ('default-cinema-3', 'Rạp phim 3', 'Thành phố 3', 'Địa chỉ 3');
     """)
 
+    #Give every initial cinema four rooms: one 120-seat IMAX room and three 50-seat Standard rooms.
     op.execute("""
-        DO $$ BEGIN
-            ALTER TABLE cinema_rooms ADD CONSTRAINT cinema_rooms_cinema_id_fkey
-            FOREIGN KEY (cinema_id) REFERENCES cinemas(id) ON DELETE RESTRICT;
-        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-    """)
-    #Give unnumbered rooms new numbers after the highest number already in use.
-    op.execute("""
-        WITH numbered AS (
-            SELECT id,
-                   COALESCE((SELECT MAX(room_number) FROM cinema_rooms), 0)
-                       + ROW_NUMBER() OVER (ORDER BY id) AS number
-            FROM cinema_rooms
-            WHERE room_number IS NULL
-        )
-        UPDATE cinema_rooms
-        SET room_number = numbered.number
-        FROM numbered
-        WHERE cinema_rooms.id = numbered.id;
+        INSERT INTO cinema_rooms (id, cinema_id, type, total_rows, total_cols, price_per_slot) VALUES
+            ('cinema-1-imax', 'default-cinema-1', 'IMAX', 10, 12, 5000000),
+            ('cinema-1-room-2', 'default-cinema-1', 'Standard', 5, 10, 5000000),
+            ('cinema-1-room-3', 'default-cinema-1', 'Standard', 5, 10, 5000000),
+            ('cinema-1-room-4', 'default-cinema-1', 'Standard', 5, 10, 5000000),
+            ('cinema-2-imax', 'default-cinema-2', 'IMAX', 10, 12, 5000000),
+            ('cinema-2-room-2', 'default-cinema-2', 'Standard', 5, 10, 5000000),
+            ('cinema-2-room-3', 'default-cinema-2', 'Standard', 5, 10, 5000000),
+            ('cinema-2-room-4', 'default-cinema-2', 'Standard', 5, 10, 5000000),
+            ('cinema-3-imax', 'default-cinema-3', 'IMAX', 10, 12, 5000000),
+            ('cinema-3-room-2', 'default-cinema-3', 'Standard', 5, 10, 5000000),
+            ('cinema-3-room-3', 'default-cinema-3', 'Standard', 5, 10, 5000000),
+            ('cinema-3-room-4', 'default-cinema-3', 'Standard', 5, 10, 5000000);
     """)
 
-    #Do not allow two rooms to have the same number.
-    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS cinema_rooms_room_number_key ON cinema_rooms(room_number);")
-
-    #Every starter cinema has one 120-seat IMAX room and three 50-seat Standard rooms.
+    #Generate seat codes from the room dimensions. IMAX rooms receive A1-J12, while Standard rooms receive A1-E10.
     op.execute("""
-        INSERT INTO cinema_rooms (
-            id, room_number, cinema_id, name, type, capacity, price_per_slot
-        ) VALUES
-            ('default-cinema-1-imax', 101, 'default-cinema-1', 'IMAX', 'IMAX', 120, 5000000),
-            ('default-cinema-1-standard-1', 102, 'default-cinema-1', 'Room 2', 'Standard', 50, 5000000),
-            ('default-cinema-1-standard-2', 103, 'default-cinema-1', 'Room 3', 'Standard', 50, 5000000),
-            ('default-cinema-1-standard-3', 104, 'default-cinema-1', 'Room 4', 'Standard', 50, 5000000),
-            ('default-cinema-2-imax', 201, 'default-cinema-2', 'IMAX', 'IMAX', 120, 5000000),
-            ('default-cinema-2-standard-1', 202, 'default-cinema-2', 'Room 2', 'Standard', 50, 5000000),
-            ('default-cinema-2-standard-2', 203, 'default-cinema-2', 'Room 3', 'Standard', 50, 5000000),
-            ('default-cinema-2-standard-3', 204, 'default-cinema-2', 'Room 4', 'Standard', 50, 5000000),
-            ('default-cinema-3-imax', 301, 'default-cinema-3', 'IMAX', 'IMAX', 120, 5000000),
-            ('default-cinema-3-standard-1', 302, 'default-cinema-3', 'Room 2', 'Standard', 50, 5000000),
-            ('default-cinema-3-standard-2', 303, 'default-cinema-3', 'Room 3', 'Standard', 50, 5000000),
-            ('default-cinema-3-standard-3', 304, 'default-cinema-3', 'Room 4', 'Standard', 50, 5000000)
-        ON CONFLICT (id) DO NOTHING;
+        INSERT INTO seats (id, cinema_room_id, seat_code)
+        SELECT 'seat-' || room.id || '-' || row_code || col_number,
+               room.id, row_code || col_number
+        FROM cinema_rooms room
+        CROSS JOIN unnest(ARRAY['A','B','C','D','E','F','G','H','I','J']) row_code
+        CROSS JOIN generate_series(1, 12) col_number
+        WHERE ascii(row_code) - ascii('A') + 1 <= room.total_rows
+          AND col_number <= room.total_cols;
     """)
 
-    op.execute("""
-        INSERT INTO seats (id, cinema_room_id, seat_code, row_label, seat_number)
-        SELECT
-            'seat-' || room.id || '-' || row_label || seat_number,
-            room.id,
-            row_label || seat_number,
-            row_label,
-            seat_number
-        FROM (
-            SELECT id, type FROM cinema_rooms
-            WHERE cinema_id IN ('default-cinema-1', 'default-cinema-2', 'default-cinema-3')
-        ) AS room
-        CROSS JOIN unnest(ARRAY['A','B','C','D','E','F','G','H','I','J']) AS row_label
-        CROSS JOIN generate_series(1, 12) AS seat_number
-        WHERE room.type = 'IMAX'
-           OR (room.type = 'Standard' AND row_label IN ('A','B','C','D','E') AND seat_number <= 10)
-        ON CONFLICT DO NOTHING;
-    """)
-
-    #Copy old room links to the new room-number field.
-    op.execute("""
-        DO $$ BEGIN
-            -- Run this step only when the old field exists.
-            IF EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name = 'showtimes' AND column_name = 'cinema_room_id'
-            ) THEN
-                -- Copy the room number into each matching showtime.
-                UPDATE showtimes s SET cinema_room_number = r.room_number
-                FROM cinema_rooms r
-                WHERE s.cinema_room_id = r.id AND s.cinema_room_number IS NULL;
-                -- New showtimes no longer need the old room ID field.
-                ALTER TABLE showtimes ALTER COLUMN cinema_room_id DROP NOT NULL;
-            END IF;
-        END $$;
-    """)
-
-    #Require every showtime to use an existing room number.
-    op.execute("""
-        DO $$ BEGIN
-            -- Reject room numbers that are not in cinema_rooms.
-            ALTER TABLE showtimes ADD CONSTRAINT showtimes_cinema_room_number_fkey
-            FOREIGN KEY (cinema_room_number) REFERENCES cinema_rooms(room_number) ON DELETE RESTRICT;
-        -- Skip this step if the rule already exists.
-        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-    """)
-
-    #Update updated_at automatically whenever a record changes.
+    #Automatically refresh updated_at whenever an application record changes.
     op.execute("""
         CREATE OR REPLACE FUNCTION set_updated_at() RETURNS trigger AS $$
         BEGIN NEW.updated_at = CURRENT_TIMESTAMP; RETURN NEW; END; $$ LANGUAGE plpgsql;
     """)
-    for table in ("users", "movies", "cinemas", "cinema_rooms", "cinema_room_images", "seats", "showtimes", "bookings", "booking_seats"):
-        #Apply the automatic updated_at behavior to each table.
-        op.execute(f"DROP TRIGGER IF EXISTS {table}_updated_at ON {table};")
-        op.execute(f"CREATE TRIGGER {table}_updated_at BEFORE UPDATE ON {table} FOR EACH ROW EXECUTE FUNCTION set_updated_at();")
 
-    print("[Migrations] PostgreSQL tables verified and up to date.")
+    #Apply the shared timestamp function to every table with updated_at.
+    for table in ("users", "movies", "cinemas", "cinema_rooms", "cinema_room_images", "seats", "showtimes", "bookings", "booking_seats"):
+        op.execute(f"CREATE TRIGGER {table}_updated_at BEFORE UPDATE ON {table} FOR EACH ROW EXECUTE FUNCTION set_updated_at();")
 
 
 def downgrade() -> None:
-    """Reverse the initial schema. This deletes all application data."""
     op.execute("DROP TABLE IF EXISTS booking_seats CASCADE;")
     op.execute("DROP TABLE IF EXISTS bookings CASCADE;")
     op.execute("DROP TABLE IF EXISTS showtimes CASCADE;")
