@@ -16,12 +16,12 @@ interface QuickLinkCard extends ICardWithLink {
 }
 
 const cards: QuickLinkCard[] = [
-  { label: 'Rạp chiếu', image: cgvTheater, linkTo: '/location' },
+  { label: 'Rạp chiếu', image: cgvTheater, linkTo: '/rent' },
   { label: 'Phim đang chiếu', image: nowShowing, linkTo: '/now_showing' },
   { label: 'CGV Special', image: cgvSpecial, linkTo: '/special_room' },
   { label: 'Thuê phòng', image: cgvMember, linkTo: '/rent' },
   { label: 'Liên hệ CGV', image: lienHeCgv, linkTo: '/contact' },
-  { label: 'Tin mới và ưu đãi', image: newsOffers, linkTo: '/new_offer' },
+  { label: 'Tin mới và ưu đãi', image: newsOffers, linkTo: '/new_and_sale' },
   { label: 'Đăng ký thành viên', image: registerNow, linkTo: '/signup' },
 ];
 

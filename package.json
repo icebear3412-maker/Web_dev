@@ -7,7 +7,10 @@
     "frontend": "vite",
     "backend": "python src/be/run.py",
     "format:check": "prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "test:fe": "tsx --tsconfig tsconfig.app.json --test tests/rental.test.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

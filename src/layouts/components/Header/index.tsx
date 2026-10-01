@@ -5,11 +5,12 @@ import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import PersonIcon from '@mui/icons-material/Person';
 import type { IButtonWithIconAndDisplayText } from '@/types';
+import logo from '@/assets/logo.png';
 
 const utilityLinks: IButtonWithIconAndDisplayText[] = [
   { display: 'Tin mới & ưu đãi', link: '/new_and_sale', icon: ConfirmationNumberIcon },
   { display: 'Vé của tôi', link: '/check_ticket', icon: LoyaltyIcon },
-  { display: 'Đăng nhập / Đăng ký', link: '/sign_in', icon: PersonIcon },
+  { display: 'Đăng nhập / Đăng ký', link: '/signin', icon: PersonIcon },
 ];
 
 const HeaderComponent: React.FC = () => {
@@ -29,13 +30,20 @@ const HeaderComponent: React.FC = () => {
       </Box>
       <div className="film-divider" />
       <Container maxWidth="lg" className="main-header-inner">
+        <Button
+          className="brand-logo-link"
+          aria-label="Về trang chủ"
+          onClick={() => navigate('/')}
+        >
+          <img src={logo} alt="CGV" />
+        </Button>
         <nav className="main-menu">
-          <Button onClick={() => navigate('/#now-showing')}>PHIM</Button>
+          <Button onClick={() => navigate('/now-showing')}>PHIM</Button>
           <Button onClick={() => navigate('/cinemas')}>RẠP CHIẾU</Button>
-          <Button onClick={() => navigate('/#member-events')}>THÀNH VIÊN</Button>
-          <Button onClick={() => navigate('/#member-events')}>SỰ KIỆN</Button>
+          <Button onClick={() => navigate('/new_and_sale')}>THÀNH VIÊN</Button>
+          <Button onClick={() => navigate('/new_and_sale')}>SỰ KIỆN</Button>
         </nav>
-        <Button className="buy-ticket-button" onClick={() => navigate('/#now-showing')}>
+        <Button className="buy-ticket-button" onClick={() => navigate('/rent')}>
           MUA VÉ NGAY
         </Button>
       </Container>

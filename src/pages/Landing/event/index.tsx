@@ -12,7 +12,6 @@ import eventThree from '@/assets/event/n_o-hoan-ve-240x201.jpg';
 import eventFour from '@/assets/event/onl_n_o_240x201_6_.png';
 import eventFive from '@/assets/event/online_package_240x201_1_.png';
 import type { ICardWithDescription } from '@/types';
-import { useNavigate } from 'react-router-dom';
 
 export const Events: ICardWithDescription[] = [
   {
@@ -49,7 +48,6 @@ export const Events: ICardWithDescription[] = [
 
 const EventSection: React.FC = () => {
   const swiperRef = useRef<SwiperCore | null>(null);
-  const navigate = useNavigate();
 
   return (
     <section className="event-section cgv-event-section" id="member-events">
@@ -75,10 +73,18 @@ const EventSection: React.FC = () => {
             {Events.map((event) => (
               <SwiperSlide key={event.linkTo}>
                 <Box
-                  onClick={() => navigate(event.linkTo)}
                   className="cgv-event-banner event-carousel-banner"
+                  onClick={(clickEvent) => {
+                    clickEvent.preventDefault();
+                    clickEvent.stopPropagation();
+                  }}
                 >
-                  <img src={event.image} alt={event.title} />
+                  <img
+                    src={event.image}
+                    alt={event.title}
+                    draggable={false}
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                  />
                 </Box>
               </SwiperSlide>
             ))}

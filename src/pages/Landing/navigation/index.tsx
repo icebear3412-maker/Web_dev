@@ -10,7 +10,7 @@ const navItems: ICardWithLink[] = [
   { image: '/icons/special.png', linkTo: '/special' },
   { image: '/icons/hall-rental.png', linkTo: '/rent' },
   { image: '/icons/contact.png', linkTo: '/contact' },
-  { image: '/icons/news-offers.png', linkTo: '/news-offers' },
+  { image: '/icons/news-offers.png', linkTo: '/new_and_sale' },
   { image: '/icons/register.png', linkTo: '/register' },
 ];
 
