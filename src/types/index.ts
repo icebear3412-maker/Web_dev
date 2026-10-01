@@ -22,6 +22,7 @@ interface MovieItem {
   genre: string;
   image: string;
   trailerUrl: string;
+  description: string;
   duration: number;
   releaseDate: string;
   status: 'Showing' | 'Hidden';
@@ -33,6 +34,7 @@ interface MovieForm {
   genre: string;
   image: string;
   trailerUrl: string;
+  description: string;
   duration: number;
   releaseDate: string;
 }

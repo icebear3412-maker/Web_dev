@@ -12,6 +12,7 @@ def get_movies():
 
     try:
         cursor = connection.cursor()
+
         cursor.execute(
             """
             SELECT
@@ -22,6 +23,7 @@ def get_movies():
                 release_date,
                 poster,
                 trailer_url,
+                description,
                 status
             FROM movies
             ORDER BY id
@@ -41,12 +43,15 @@ def get_movies():
                     "release_date": row[4].isoformat() if row[4] else None,
                     "poster": row[5],
                     "trailer_url": row[6],
-                    "status": row[7],
+                    "description": row[7],
+                    "status": row[8],
                 }
             )
 
         cursor.close()
+
         return jsonify(movies)
+
     finally:
         connection.close()
 
@@ -61,6 +66,7 @@ def create_movie():
     release_date = data.get("release_date")
     poster = data.get("poster")
     trailer_url = data.get("trailer_url")
+    description = data.get("description")
     status = data.get("status", "showing")
 
     if not title:
@@ -81,10 +87,12 @@ def create_movie():
                     release_date,
                     poster,
                     trailer_url,
+                    description,
                     status
                 )
             VALUES
                 (
+                    %s,
                     %s,
                     %s,
                     %s,
@@ -101,6 +109,7 @@ def create_movie():
                 release_date,
                 poster,
                 trailer_url,
+                description,
                 status
             """,
             (
@@ -110,11 +119,13 @@ def create_movie():
                 release_date,
                 poster,
                 trailer_url,
+                description,
                 status,
             ),
         )
 
         row = cursor.fetchone()
+
         connection.commit()
         cursor.close()
 
@@ -128,11 +139,13 @@ def create_movie():
                     "release_date": row[4].isoformat() if row[4] else None,
                     "poster": row[5],
                     "trailer_url": row[6],
-                    "status": row[7],
+                    "description": row[7],
+                    "status": row[8],
                 }
             ),
             201,
         )
+
     finally:
         connection.close()
 
@@ -148,6 +161,7 @@ def update_movie(movie_id):
         "release_date",
         "poster",
         "trailer_url",
+        "description",
         "status",
     }
 
@@ -181,15 +195,18 @@ def update_movie(movie_id):
                 release_date,
                 poster,
                 trailer_url,
+                description,
                 status
         """
 
         cursor.execute(query, values)
+
         row = cursor.fetchone()
 
         if row is None:
             connection.rollback()
             cursor.close()
+
             return jsonify({"error": "Movie not found"}), 404
 
         connection.commit()
@@ -204,9 +221,11 @@ def update_movie(movie_id):
                 "release_date": row[4].isoformat() if row[4] else None,
                 "poster": row[5],
                 "trailer_url": row[6],
-                "status": row[7],
+                "description": row[7],
+                "status": row[8],
             }
         )
+
     finally:
         connection.close()
 
@@ -232,6 +251,7 @@ def delete_movie(movie_id):
         if result is None:
             connection.rollback()
             cursor.close()
+
             return jsonify({"error": "Movie not found"}), 404
 
         connection.commit()
@@ -243,6 +263,7 @@ def delete_movie(movie_id):
                 "message": "Movie deleted successfully",
             }
         )
+
     finally:
         connection.close()
 
@@ -267,6 +288,7 @@ def get_screenings(movie_id):
 
         if movie is None:
             cursor.close()
+
             return jsonify({"error": "Movie not found"}), 404
 
         cursor.execute(
@@ -295,7 +317,9 @@ def get_screenings(movie_id):
             )
 
         cursor.close()
+
         return jsonify(screenings)
+
     finally:
         connection.close()
 
@@ -331,6 +355,7 @@ def create_screening(movie_id):
 
         if movie is None:
             cursor.close()
+
             return jsonify({"error": "Movie not found"}), 404
 
         cursor.execute(
@@ -360,6 +385,7 @@ def create_screening(movie_id):
         )
 
         row = cursor.fetchone()
+
         connection.commit()
         cursor.close()
 
@@ -373,6 +399,7 @@ def create_screening(movie_id):
             ),
             201,
         )
+
     finally:
         connection.close()
 
@@ -405,6 +432,7 @@ def delete_screening(movie_id, screening_id):
         if result is None:
             connection.rollback()
             cursor.close()
+
             return jsonify({"error": "Screening not found"}), 404
 
         connection.commit()
@@ -416,5 +444,6 @@ def delete_screening(movie_id, screening_id):
                 "message": "Screening deleted successfully",
             }
         )
+
     finally:
         connection.close()
