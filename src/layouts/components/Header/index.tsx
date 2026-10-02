@@ -38,8 +38,8 @@ const HeaderComponent: React.FC = () => {
           <img src={logo} alt="CGV" />
         </Button>
         <nav className="main-menu">
-          <Button onClick={() => navigate('/now-showing')}>PHIM</Button>
-          <Button onClick={() => navigate('/cinemas')}>RẠP CHIẾU</Button>
+          <Button onClick={() => navigate('/booking')}>PHIM</Button>
+          <Button onClick={() => navigate('/booking')}>RẠP CHIẾU</Button>
           <Button onClick={() => navigate('/new_and_sale')}>THÀNH VIÊN</Button>
           <Button onClick={() => navigate('/new_and_sale')}>SỰ KIỆN</Button>
         </nav>
