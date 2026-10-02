@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import type { MovieForm, MovieItem, Screening } from '../../../types';
 
-const API = '/movies';
+const API = '/api/admin/movies';
 
 interface Room {
   room_number: number;

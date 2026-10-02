@@ -59,6 +59,41 @@ interface IButtonWithIconAndDisplayText {
   icon: SvgIconComponent;
 }
 
+interface IMovieCard {
+  title: string;
+  age: number;
+  image: string;
+  linkTo: string;
+}
+
+interface IRoomDetailResPayload {
+  occupiedSeat: string[];
+  size: [number, number];
+  price: number;
+}
+
+interface IMovieShowday {
+  date: number[];
+}
+
+interface IMovieShowTime {
+  time: number[];
+}
+
+interface IMovieInfoPayload {
+  image: string;
+  name: string;
+  time: number;
+  director: string;
+  genre: string;
+  actor: string;
+  releaseDate: string;
+  rating: number;
+  subtitle: string;
+  description: string;
+  trailerLink: string;
+}
+
 export type {
   IDefaultReactProps,
   IRoute,
@@ -68,4 +103,9 @@ export type {
   ICardWithLink,
   ICardWithDescription,
   IButtonWithIconAndDisplayText,
+  IMovieCard,
+  IRoomDetailResPayload,
+  IMovieInfoPayload,
+  IMovieShowTime,
+  IMovieShowday,
 };

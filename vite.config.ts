@@ -10,6 +10,11 @@ export default defineConfig({
 
   server: {
     proxy: {
+      '/api/admin/movies': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+
       '/movies': {
         target: 'http://localhost:5000',
         changeOrigin: true,
