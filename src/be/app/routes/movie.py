@@ -256,8 +256,16 @@ def get_screenings(movie_id):
         return jsonify([
             {
                 "id": str(row["id"]),
-                "date": row["show_date"] or "",
-                "time": row["show_time"] or "",
+                "date": (
+                    row["show_date"].isoformat()
+                    if row["show_date"]
+                    else ""
+                ),
+                "time": (
+                    row["show_time"].isoformat()
+                    if row["show_time"]
+                    else ""
+                ),
                 "room": str(row["cinema_room_number"]),
                 "room_name": row["room_name"] or "",
                 "room_type": row["room_type"] or "",
@@ -352,8 +360,8 @@ def create_screening(movie_id):
 
         return jsonify({
             "id": str(row["id"]),
-            "date": row["show_date"],
-            "time": row["show_time"],
+            "date": row["show_date"].isoformat(),
+            "time": row["show_time"].isoformat(),
             "room": str(row["cinema_room_number"]),
             "room_name": room["name"] or "",
             "room_type": room["type"] or "",

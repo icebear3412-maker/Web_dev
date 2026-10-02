@@ -31,10 +31,10 @@ def upgrade() -> None:
     op.execute("ALTER TABLE showtimes ALTER COLUMN show_date SET NOT NULL;")
     op.execute("ALTER TABLE showtimes ALTER COLUMN show_time SET NOT NULL;")
 
-    #Remove the old rule because it allowed different movies to use the same room at the same date and time.
+    #Replace the automatically named rule with a stable constraint name.
     op.execute("""
         ALTER TABLE showtimes DROP CONSTRAINT IF EXISTS
-            showtimes_movie_id_cinema_room_number_show_date_show_time_key;
+            showtimes_cinema_room_id_show_date_show_time_key;
     """)
     op.execute("""
         DO $$ BEGIN
@@ -59,16 +59,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("ALTER TABLE showtimes DROP CONSTRAINT IF EXISTS showtimes_room_start_key;")
     op.execute("""
-        ALTER TABLE showtimes ALTER COLUMN show_date TYPE VARCHAR(50)
-            USING TO_CHAR(show_date, 'YYYY-MM-DD');
-    """)
-    op.execute("""
-        ALTER TABLE showtimes ALTER COLUMN show_time TYPE VARCHAR(50)
-            USING TO_CHAR(show_time, 'HH24:MI');
-    """)
-    op.execute("""
         ALTER TABLE showtimes ADD CONSTRAINT
-            showtimes_movie_id_cinema_room_number_show_date_show_time_key
-            UNIQUE (movie_id, cinema_room_number, show_date, show_time);
+            showtimes_cinema_room_id_show_date_show_time_key
+            UNIQUE (cinema_room_number, show_date, show_time);
     """)
     op.execute("ALTER TABLE movies DROP CONSTRAINT IF EXISTS movies_base_price_nonnegative;")
