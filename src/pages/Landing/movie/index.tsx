@@ -18,7 +18,6 @@ import 'swiper/css/navigation';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Movie } from '@/services/movies';
-import { localMoviePosters } from '@/services/moviePosters';
 import { clickableSx } from '@/theme';
 
 interface MovieSectionProps {
@@ -31,19 +30,8 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
   const [activeTrailer, setActiveTrailer] = useState<{ title: string; embedUrl: string } | null>(
     null,
   );
-  const displayMovies = localMoviePosters.map((poster, index) => {
-    const movie = movies[index]?.poster ? movies[index] : undefined;
-    return {
-      ...poster,
-      ...movie,
-      id: movie?.id ?? poster.id,
-      poster: movie?.poster || poster.poster,
-      title: movie?.title ?? poster.title,
-      title_vn: movie?.title_vn ?? poster.title_vn,
-      age_rating: movie?.age_rating ?? poster.age_rating,
-      trailer_url: movie?.trailer_url ?? poster.trailer_url,
-    };
-  });
+  // Landing page only shows movies returned by the database API.
+  const displayMovies = movies.filter((movie) => Boolean(movie.poster));
 
   const getMovieUrl = (movie: Movie) => `/movies/${encodeURIComponent(movie.id)}`;
 
@@ -90,7 +78,9 @@ const MovieSection: React.FC<MovieSectionProps> = ({ movies }) => {
       <Container maxWidth="lg">
         <Typography className="section-title">PHIM ĐANG CHIẾU</Typography>
         {displayMovies.length === 0 ? (
-          <Typography className="empty-movies">Chưa có poster phim để hiển thị.</Typography>
+          <Typography className="empty-movies">
+            Hiện chưa có phim đang chiếu. Hãy thêm phim trong trang quản trị để hiển thị tại đây.
+          </Typography>
         ) : (
           <Swiper
             className="movie-carousel"
