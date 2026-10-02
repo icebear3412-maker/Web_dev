@@ -12,12 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  EmailOutlined,
-  LockOutlined,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material';
+import { EmailOutlined, LockOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 import RandomCaptcha from '../components/Captcha';
@@ -115,8 +110,7 @@ const SignInPage: React.FC = () => {
           content: '""',
           position: 'absolute',
           inset: 0,
-          background:
-            'radial-gradient(circle, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.85) 100%)',
+          background: 'radial-gradient(circle, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.85) 100%)',
           zIndex: 1,
         },
       }}
@@ -274,10 +268,7 @@ const SignInPage: React.FC = () => {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                     {showPassword ? (
                       <VisibilityOff sx={{ color: '#888' }} />
                     ) : (

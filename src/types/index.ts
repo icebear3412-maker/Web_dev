@@ -1,3 +1,5 @@
+import type { SvgIconComponent } from '@mui/icons-material';
+
 interface IDefaultReactProps {
   children: React.ReactNode;
 }
@@ -6,6 +8,31 @@ interface IRoute {
   path: string;
   component: React.FC;
   layout: React.FC<IDefaultReactProps> | null;
+}
+
+interface ICardWithLink {
+  image: string;
+  linkTo: string;
+}
+
+interface ICardWithDescription {
+  title: string;
+  text: string;
+  image: string;
+  linkTo: string;
+}
+
+interface IButtonWithIconAndDisplayText {
+  display: string;
+  link: string;
+  icon: SvgIconComponent;
+}
+
+interface IMovieCard {
+  title: string;
+  age: number;
+  image: string;
+  linkTo: string;
 }
 
 interface IRoomDetailResPayload {
@@ -39,6 +66,10 @@ interface IMovieInfoPayload {
 export type {
   IDefaultReactProps,
   IRoute,
+  ICardWithLink,
+  ICardWithDescription,
+  IMovieCard,
+  IButtonWithIconAndDisplayText,
   IRoomDetailResPayload,
   IMovieInfoPayload,
   IMovieShowTime,
