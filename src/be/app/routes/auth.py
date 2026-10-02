@@ -10,7 +10,24 @@ from backend.app.db import get_db_connection
 auth_router = Blueprint("auth", __name__)
 
 
+@auth_router.route("/signup", methods=["POST"])
+def signup():
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON object is required"}), 400
+
+    full_name = data.get("full_name")
+    email = data.get("email")
+    password = data.get("password")
+    if not isinstance(email, str) or not email.strip() or not isinstance(password, str) or not password:
+        return jsonify({"error": "email and password are required"}), 400
+
+    # Account creation is not implemented by the current database API.
+    return jsonify({"error": "Account registration is not available yet"}), 501
+
+
 @auth_router.route("/login", methods=["POST"])
+@auth_router.route("/signin", methods=["POST"])
 def login():
     payload = request.get_json(silent=True) or {}
     if not isinstance(payload, dict):
