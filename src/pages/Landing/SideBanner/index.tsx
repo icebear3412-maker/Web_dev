@@ -42,7 +42,13 @@ const SideBanners: React.FC = () => {
             component="img"
             src={banner.image}
             alt=""
-            sx={{ width: '100%', height: 'min(82vh, 750px)', objectFit: 'fill' }}
+            sx={{
+              display: 'block',
+              width: '100%',
+              height: 'auto',
+              maxHeight: 'min(82vh, 750px)',
+              objectFit: 'contain',
+            }}
           />
         </Box>
       ))}

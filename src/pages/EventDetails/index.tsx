@@ -1,6 +1,6 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Events } from '@/pages/Landing/Event';
+import { Events } from '@/pages/Landing/event';
 
 const EventDetails: React.FC = () => {
   const { eventSlug = '' } = useParams();

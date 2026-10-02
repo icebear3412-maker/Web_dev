@@ -2,6 +2,7 @@ import type { IRoute } from '@/types';
 import DefaultLayout from '@/layouts/DefaultLayout';
 
 import LandingPage from '@/pages/Landing';
+import EventPage from '@/pages/Event';
 import BookingPage from '@/pages/Booking';
 import MovieDetails from '@/pages/MovieDetails';
 import TicketCheck from '@/pages/TicketCheck';
@@ -16,6 +17,7 @@ import NotFound from '@/pages/NotFound';
 
 const publicRoutes: IRoute[] = [
   { path: '/', component: LandingPage, layout: DefaultLayout },
+  { path: '/event', component: EventPage, layout: DefaultLayout },
   { path: '/movies/:movieId', component: MovieDetails, layout: DefaultLayout },
   { path: '/check_ticket', component: TicketCheck, layout: DefaultLayout },
   { path: '/events/:eventSlug', component: EventDetails, layout: DefaultLayout },

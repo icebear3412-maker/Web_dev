@@ -73,10 +73,30 @@ const getDate = (value: string) => {
 };
 
 const formatDate = (value: string) =>
-  getDate(value).toLocaleDateString('en-GB');
+  getDate(value).toLocaleDateString('vi-VN');
 
 const formatTime = (value?: string) =>
   value ? value.slice(0, 5) : '';
+
+const getVietnameseError = (error: unknown, fallback: string) => {
+  if (error instanceof Error && /[\u00c0-\u024f\u1e00-\u1eff]/u.test(error.message)) {
+    return error.message;
+  }
+  return fallback;
+};
+
+const translateBookingError = (message: string) => {
+  const translations: Record<string, string> = {
+    'Showtime not found': 'Không tìm thấy suất chiếu.',
+    "One or more seats do not belong to this showtime's room":
+      'Có ghế không thuộc phòng của suất chiếu này.',
+    'One or more seats have already been booked':
+      'Một hoặc nhiều ghế vừa được người khác đặt. Vui lòng chọn ghế khác.',
+    'Booking failed.': 'Đặt vé thất bại. Vui lòng thử lại.',
+  };
+
+  return translations[message] || 'Không thể đặt vé lúc này. Vui lòng thử lại.';
+};
 
 const convertShowtime = (item: ApiShowtime): Showtime => {
   const startTime = item.show_time || item.start_time || '';
@@ -166,10 +186,10 @@ const BookingPage = () => {
             `${API_BASE_URL}/movies/${encodeURIComponent(movieId)}`,
             { signal: controller.signal },
           );
-          if (!response.ok) throw new Error('Không tìm thấy phim trong database.');
+          if (!response.ok) throw new Error('Không tìm thấy phim trong cơ sở dữ liệu.');
 
           const data = await response.json();
-          if (!data.movie) throw new Error('Không tìm thấy phim trong database.');
+          if (!data.movie) throw new Error('Không tìm thấy phim trong cơ sở dữ liệu.');
           setMovie(data.movie);
           return;
         }
@@ -187,9 +207,7 @@ const BookingPage = () => {
         setMovie(null);
         setMovies([]);
         setMovieError(
-          error instanceof Error
-            ? error.message
-            : 'Không kết nối được tới database phim.',
+          getVietnameseError(error, 'Không thể kết nối tới máy chủ phim.'),
         );
       } finally {
         if (!controller.signal.aborted) setLoadingMovie(false);
@@ -222,9 +240,7 @@ const BookingPage = () => {
       setShowtimes(items.map(convertShowtime));
     } catch (error) {
       setShowtimes([]);
-      setMessage(
-        error instanceof Error ? error.message : 'Không tải được lịch chiếu.',
-      );
+      setMessage(getVietnameseError(error, 'Không thể tải lịch chiếu. Vui lòng thử lại.'));
     } finally {
       setLoadingTimes(false);
     }
@@ -262,7 +278,7 @@ const BookingPage = () => {
       const items: Seat[] = Array.isArray(data)
         ? data
         : data.seats || [];
-      if (!items.length) throw new Error('Suất chiếu này chưa có ghế trong database.');
+      if (!items.length) throw new Error('Suất chiếu này chưa có ghế trong cơ sở dữ liệu.');
 
       setSeats(items);
       setRoom(createRoom(items, showtime.price));
@@ -271,7 +287,7 @@ const BookingPage = () => {
       setSeatOpen(true);
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : 'Không tải được sơ đồ ghế.',
+        getVietnameseError(error, 'Không thể tải sơ đồ ghế. Vui lòng thử lại.'),
       );
     } finally {
       setLoadingSeats(false);
@@ -305,7 +321,7 @@ const BookingPage = () => {
       return;
     }
     if (!selectedShowtime || !selectedSeats.length) {
-      setMessage('Please select at least one seat.');
+      setMessage('Vui lòng chọn ít nhất một ghế.');
       return;
     }
 
@@ -358,8 +374,8 @@ const BookingPage = () => {
     } catch (error) {
       setMessage(
         error instanceof Error
-          ? error.message
-          : 'Booking failed.',
+          ? translateBookingError(error.message)
+          : 'Không thể đặt vé lúc này. Vui lòng thử lại.',
       );
     } finally {
       setBooking(false);
@@ -443,7 +459,7 @@ const BookingPage = () => {
           ) : null
         ) : !movies.length ? (
           <Alert severity="info" sx={{ mt: 2 }}>
-            Database chưa có phim đang chiếu để đặt vé.
+            Chưa có phim đang chiếu trong cơ sở dữ liệu.
           </Alert>
         ) : (
           <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -456,7 +472,7 @@ const BookingPage = () => {
                       <CardMedia
                         component="img"
                         image={item.poster}
-                        alt={`Poster phim ${title}`}
+                        alt={`Áp phích phim ${title}`}
                         sx={{ height: 320, objectFit: 'cover' }}
                       />
                     ) : (
@@ -469,7 +485,7 @@ const BookingPage = () => {
                           color: '#70675d',
                         }}
                       >
-                        Chưa có poster
+                        Chưa có áp phích
                       </Box>
                     )}
                     <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
@@ -594,13 +610,13 @@ const BookingPage = () => {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Select show date</DialogTitle>
+        <DialogTitle>Chọn ngày chiếu</DialogTitle>
 
         <DialogContent dividers>
           {loadingTimes ? (
-            <Typography>Loading show dates...</Typography>
+            <Typography>Đang tải ngày chiếu...</Typography>
           ) : !dates.length ? (
-            <Typography>{message || 'Chưa có lịch chiếu cho phim này trong database.'}</Typography>
+            <Typography>{message || 'Chưa có lịch chiếu cho phim này trong cơ sở dữ liệu.'}</Typography>
           ) : (
             <Grid container spacing={2}>
               {dates.map((item) => {
@@ -628,7 +644,7 @@ const BookingPage = () => {
 
         <DialogActions>
           <Button onClick={() => setDateOpen(false)}>
-            Cancel
+            Hủy
           </Button>
         </DialogActions>
       </Dialog>
@@ -639,15 +655,15 @@ const BookingPage = () => {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Select showtime</DialogTitle>
+        <DialogTitle>Chọn suất chiếu</DialogTitle>
 
         <DialogContent dividers>
           {message && <Alert severity="error" sx={{ mb: 2 }}>{message}</Alert>}
           {loadingTimes ? (
-            <Typography>Loading showtimes...</Typography>
+            <Typography>Đang tải suất chiếu...</Typography>
           ) : !currentShowtimes.length ? (
             <Typography>
-              No showtimes for this date.
+              Không có suất chiếu vào ngày này.
             </Typography>
           ) : (
             <Grid container spacing={2}>
@@ -666,10 +682,10 @@ const BookingPage = () => {
                           : ''}
                       </Typography>
                       <Typography variant="body2">
-                        Room {showtime.room ?? 'N/A'}
+                        Phòng: {showtime.room ?? 'Chưa xác định'}
                       </Typography>
                       <Typography variant="body2">
-                        {showtime.price.toLocaleString('vi-VN')} VND
+                        {showtime.price.toLocaleString('vi-VN')} VNĐ
                       </Typography>
                     </Box>
                   </Button>
@@ -686,7 +702,7 @@ const BookingPage = () => {
               setDateOpen(true);
             }}
           >
-            Back
+            Quay lại chọn ngày
           </Button>
         </DialogActions>
       </Dialog>
@@ -697,11 +713,11 @@ const BookingPage = () => {
         fullWidth
         maxWidth="lg"
       >
-        <DialogTitle>Select seats</DialogTitle>
+        <DialogTitle>Chọn ghế</DialogTitle>
 
         <DialogContent dividers>
           {loadingSeats || !room ? (
-            <Typography>Loading seats...</Typography>
+            <Typography>Đang tải sơ đồ ghế...</Typography>
           ) : (
             <Grid container spacing={4}>
               <Grid size={{ xs: 12, md: 8 }}>
@@ -713,7 +729,7 @@ const BookingPage = () => {
                     backgroundColor: '#eee',
                   }}
                 >
-                  SCREEN
+                  MÀN HÌNH
                 </Box>
 
                 <Box
@@ -816,44 +832,44 @@ const BookingPage = () => {
                   }}
                 >
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    Booking Summary
+                    Thông tin đặt vé
                   </Typography>
 
                   <Typography sx={{ mt: 2 }}>
-                    <b>Movie:</b> {movie ? getMovieTitle(movie) : '—'}
+                    <b>Phim:</b> {movie ? getMovieTitle(movie) : '—'}
                   </Typography>
 
                   <Typography>
-                    <b>Date:</b>{' '}
+                    <b>Ngày chiếu:</b>{' '}
                     {selectedShowtime
                       ? formatDate(selectedShowtime.date)
                       : '-'}
                   </Typography>
 
                   <Typography>
-                    <b>Time:</b>{' '}
+                    <b>Giờ chiếu:</b>{' '}
                     {selectedShowtime?.startTime || '-'}
                   </Typography>
 
                   <Typography>
-                    <b>Room:</b>{' '}
+                    <b>Phòng:</b>{' '}
                     {selectedShowtime?.room ?? '-'}
                   </Typography>
 
                   <Typography>
-                    <b>Seats:</b>{' '}
+                    <b>Ghế:</b>{' '}
                     {selectedSeatCodes.length
                       ? selectedSeatCodes.join(', ')
-                      : 'None'}
+                      : 'Chưa chọn ghế'}
                   </Typography>
 
                   <Typography>
-                    <b>Price:</b>{' '}
-                    {room.price.toLocaleString('vi-VN')} VND / seat
+                    <b>Giá vé:</b>{' '}
+                    {room.price.toLocaleString('vi-VN')} VNĐ / ghế
                   </Typography>
 
                   <Typography variant="h6" sx={{ mt: 2 }}>
-                    Total: {total.toLocaleString('vi-VN')} VND
+                    Tổng cộng: {total.toLocaleString('vi-VN')} VNĐ
                   </Typography>
 
                   {message && (
@@ -885,14 +901,14 @@ const BookingPage = () => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={cancelSeats}>Cancel</Button>
+          <Button onClick={cancelSeats}>Hủy</Button>
 
           <Button
             variant="contained"
             disabled={!selectedSeats.length || booking}
             onClick={book}
           >
-            {booking ? 'Booking...' : 'Book'}
+            {booking ? 'Đang đặt vé...' : 'Đặt vé'}
           </Button>
         </DialogActions>
       </Dialog>

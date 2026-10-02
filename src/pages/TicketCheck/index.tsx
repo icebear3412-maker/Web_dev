@@ -70,7 +70,7 @@ const TicketCheck: React.FC = () => {
             <Typography>Mã vé: {booking.booking_ref}</Typography>
             <Typography>Ngày giờ chiếu: {dateLabel} · {booking.show_time.slice(0, 5)}</Typography>
             <Typography>
-              Rạp / Phòng: {booking.cinema_name || 'CGV'} · {booking.room_name || `Phòng ${booking.room_number ?? ''}`}
+              Rạp / Phòng: {booking.cinema_name || 'USTH'} · {booking.room_name || `Phòng ${booking.room_number ?? ''}`}
             </Typography>
             {booking.format && <Typography>Định dạng: {booking.format}</Typography>}
             <Typography>

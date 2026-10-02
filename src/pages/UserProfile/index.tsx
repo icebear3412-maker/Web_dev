@@ -408,7 +408,7 @@ const UserProfilePage: React.FC = () => {
                     <Card variant="outlined" sx={{ borderColor: '#e51922', borderStyle: 'dashed' }}>
                       <CardContent>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#e51922' }}>
-                          CGV NEW MEMBER 2026
+                          USTH NEW MEMBER 2026
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#666' }}>
                           Giảm 20.000 VNĐ cho vé phim 2D bất kỳ.

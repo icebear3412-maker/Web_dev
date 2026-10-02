@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-import cgvLogo from '../../../assets/logo.png';
+import usthLogo from '../../../assets/logo.png';
 import RandomCaptcha from '../components/Captcha';
 
 const SignUpPage: React.FC = () => {
@@ -199,14 +199,14 @@ const SignUpPage: React.FC = () => {
           CHÀO MỪNG BẠN ĐẾN VỚI
         </Typography>
 
-        {/* LOGO CGV CLICK VỀ TRANG CHỦ */}
+        {/* Logo USTH về trang chủ */}
         <Box
           component="img"
-          src={cgvLogo}
-          alt="CGV Logo"
+          src={usthLogo}
+          alt="USTH Logo"
           onClick={() => navigate('/')}
           sx={{
-            height: { xs: 45, sm: 55, md: 65 },
+            height: { xs: 50, sm: 60, md: 72 },
             objectFit: 'contain',
             mt: 1,
             mb: 1,

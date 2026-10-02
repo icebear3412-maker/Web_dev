@@ -15,7 +15,7 @@ import {
 import { EmailOutlined, LockOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-import cgvLogo from '../../../assets/logo.png';
+import usthLogo from '../../../assets/logo.png';
 import RandomCaptcha from '../components/Captcha';
 
 const SignInPage: React.FC = () => {
@@ -93,12 +93,7 @@ const SignInPage: React.FC = () => {
         alert('Đăng nhập thành công!');
 
         // 3. Chuyển hướng người dùng về Trang Chủ (http://localhost:5173/)
-        const signedInUser = data.user;
-        navigate(
-          signedInUser?.role === 'admin' && signedInUser.email?.toLowerCase() === 'admin@gmail.com'
-            ? '/admin/movies'
-            : '/',
-        );
+        navigate('/');
       } else {
         alert(data.error || data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
       }
@@ -185,14 +180,14 @@ const SignInPage: React.FC = () => {
           CHÀO MỪNG BẠN ĐẾN VỚI
         </Typography>
 
-        {/* LOGO CGV CLICK VỀ TRANG CHỦ */}
+        {/* Logo USTH về trang chủ */}
         <Box
           component="img"
-          src={cgvLogo}
-          alt="CGV Logo"
+          src={usthLogo}
+          alt="USTH Logo"
           onClick={() => navigate('/')}
           sx={{
-            height: { xs: 45, sm: 55, md: 65 },
+            height: { xs: 50, sm: 60, md: 72 },
             objectFit: 'contain',
             mt: 1,
             mb: 1,

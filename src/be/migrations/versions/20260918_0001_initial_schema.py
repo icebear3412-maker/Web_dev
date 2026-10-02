@@ -64,7 +64,9 @@ def upgrade() -> None:
             type VARCHAR(100) NOT NULL,
             total_rows INTEGER NOT NULL CHECK (total_rows > 0),
             total_cols INTEGER NOT NULL CHECK (total_cols > 0),
-            price_per_slot INTEGER DEFAULT 5000000, features TEXT,
+            price_per_slot INTEGER DEFAULT 5000000,
+            ticket_price INTEGER NOT NULL DEFAULT 100000 CHECK (ticket_price >= 0),
+            features TEXT,
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );

@@ -4,21 +4,20 @@ import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { useNavigate } from 'react-router-dom';
 import type { Movie } from '@/services/movies';
 import { clickableSx } from '@/theme';
 
-import studioGhibli from '@/assets/banner/980wx448h_22__7.jpg';
-import scotty from '@/assets/banner/980wx448h_22__9.jpg';
-import suzume from '@/assets/banner/980wx448h_23_.jpg';
-import moonFestival from '@/assets/banner/980x448_67__13.jpg';
+import studioGhibli from '@/assets/banner/studio-ghibli-usth.jpg';
+import scotty from '@/assets/banner/scotty-usth.jpg';
+import suzume from '@/assets/banner/suzume-usth.jpg';
+import moonFestival from '@/assets/banner/moon-festival-usth.jpg';
 import battle from '@/assets/banner/980x448_67__15.jpg';
-import visa from '@/assets/banner/980x448_8__2.png';
+import visa from '@/assets/banner/visa-applepay-usth.jpg';
 import bradPitt from '@/assets/banner/copy_of_hob_rollingbanner_980x448.jpg';
-import fanC from '@/assets/banner/fanc.jpg';
-import lays from '@/assets/banner/lays.jpg';
+import fanC from '@/assets/banner/fan-c-usth.jpg';
+import lays from '@/assets/banner/lays-usth.jpg';
 import quyetCua from '@/assets/banner/quyetcua.jpg';
-import vcb from '@/assets/banner/vcb.jpg';
+import vcb from '@/assets/banner/vnpay-usth.jpg';
 
 interface CarouselProps {
   movies: Movie[];

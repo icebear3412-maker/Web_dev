@@ -41,6 +41,8 @@ export interface CinemaRoom {
   name: string;
   type: string;
   capacity: number;
+  ticket_price: number;
+  cinema_name?: string;
 }
 
 export async function fetchCinemaRooms(signal?: AbortSignal): Promise<CinemaRoom[]> {

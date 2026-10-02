@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Add,
+  ArrowBack,
   CalendarMonth,
   Delete,
   Edit,
@@ -28,6 +29,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import type { MovieForm, MovieItem, Screening } from '../../../types';
 
 const API = '/api/admin/movies';
@@ -103,6 +105,7 @@ const isValidDate = (value: string) => {
 };
 
 export default function MovieListPage() {
+  const navigate = useNavigate();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
 
@@ -620,19 +623,25 @@ export default function MovieListPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: '#faf9f4',
-        p: {
-          xs: 2,
-          md: 4,
-        },
+        backgroundColor: '#fcfaed',
+        color: '#29241f',
+        p: { xs: 2, md: 5 },
       }}
     >
       <Box
         sx={{
-          maxWidth: 1400,
+          maxWidth: 1500,
           mx: 'auto',
         }}
       >
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/admin')}
+          sx={{ mb: 2, color: '#6e6559', textTransform: 'none' }}
+        >
+          Quay lại tổng quan
+        </Button>
+
         <Box
           sx={{
             display: 'flex',
@@ -651,19 +660,24 @@ export default function MovieListPage() {
         >
           <Box>
             <Typography
-              variant="h4"
-              fontWeight={800}
               sx={{
-                letterSpacing: '-0.5px',
-                color: '#202020',
+                font: {
+                  xs: "900 34px 'Roboto Condensed', sans-serif",
+                  sm: "900 42px 'Roboto Condensed', sans-serif",
+                },
+                letterSpacing: 1,
+                color: '#29241f',
+                textTransform: 'uppercase',
               }}
             >
-              Danh sách phim
+              DANH SÁCH PHIM
             </Typography>
+
+            <Box sx={{ width: 68, height: 4, bgcolor: '#e51b23', mt: 1.25 }} />
 
             <Typography
               sx={{
-                color: 'text.secondary',
+                color: '#6e6559',
                 mt: 0.5,
               }}
             >
@@ -676,12 +690,14 @@ export default function MovieListPage() {
             startIcon={<Add />}
             onClick={openAddMovie}
             sx={{
-              borderRadius: 2,
+              borderRadius: '2px',
               px: 2.5,
               py: 1.2,
               textTransform: 'none',
-              fontWeight: 700,
-              boxShadow: 2,
+              fontWeight: 800,
+              backgroundColor: '#e51b23',
+              boxShadow: '0 3px 0 #aa1111',
+              '&:hover': { backgroundColor: '#c9151b', boxShadow: '0 3px 0 #8f0e0e' },
             }}
           >
             Thêm phim
@@ -705,10 +721,18 @@ export default function MovieListPage() {
                 }
                 onClick={() => setFilter(item)}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: '2px',
                   px: 2.5,
                   textTransform: 'none',
                   fontWeight: 700,
+                  color: filter === item ? '#fff' : '#e51b23',
+                  borderColor: '#e51b23',
+                  backgroundColor: filter === item ? '#e51b23' : 'transparent',
+                  '&:hover': {
+                    color: '#fff',
+                    borderColor: '#c9151b',
+                    backgroundColor: '#c9151b',
+                  },
                 }}
               >
                 {item === 'all'
@@ -728,12 +752,12 @@ export default function MovieListPage() {
               sx={{
                 p: 6,
                 textAlign: 'center',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 3,
+                border: '1px solid #d9d0c1',
+                borderRadius: 0,
+                backgroundColor: '#fff',
               }}
             >
-              <Typography color="text.secondary">
+              <Typography sx={{ color: '#6e6559' }}>
                 Không tìm thấy phim nào.
               </Typography>
             </Paper>
@@ -747,14 +771,13 @@ export default function MovieListPage() {
                   elevation={0}
                   sx={{
                     p: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 3,
+                    border: '1px solid #d9d0c1',
+                    borderRadius: 0,
                     backgroundColor: '#fff',
                     transition: '0.2s',
                     '&:hover': {
-                      boxShadow: 3,
-                      transform: 'translateY(-2px)',
+                      borderColor: '#e51b23',
+                      boxShadow: '0 4px 0 #e51b23',
                     },
                   }}
                 >
@@ -931,8 +954,7 @@ export default function MovieListPage() {
                       sx={{
                         mt: 3,
                         pt: 3,
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
+                        borderTop: '1px solid #d9d0c1',
                       }}
                     >
                       <Typography
@@ -946,9 +968,9 @@ export default function MovieListPage() {
                       <Stack spacing={1.2} mb={3}>
                         {movie.screenings.length === 0 ? (
                           <Typography
-                            color="text.secondary"
                             sx={{
                               fontSize: 14,
+                              color: '#6e6559',
                             }}
                           >
                             Phim chưa có lịch chiếu.
@@ -1126,8 +1148,11 @@ export default function MovieListPage() {
                           }
                           sx={{
                             textTransform: 'none',
-                            borderRadius: 2,
+                            borderRadius: '2px',
                             mt: 0.5,
+                            backgroundColor: '#e51b23',
+                            boxShadow: '0 3px 0 #aa1111',
+                            '&:hover': { backgroundColor: '#c9151b', boxShadow: '0 3px 0 #8f0e0e' },
                           }}
                         >
                           Thêm lịch chiếu
@@ -1345,8 +1370,11 @@ export default function MovieListPage() {
             onClick={saveMovie}
             sx={{
               textTransform: 'none',
-              borderRadius: 2,
+              borderRadius: '2px',
               px: 3,
+              backgroundColor: '#e51b23',
+              boxShadow: '0 3px 0 #aa1111',
+              '&:hover': { backgroundColor: '#c9151b', boxShadow: '0 3px 0 #8f0e0e' },
             }}
           >
             {editMovie ? 'Lưu thay đổi' : 'Thêm phim'}

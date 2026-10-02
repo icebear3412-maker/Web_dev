@@ -3,25 +3,26 @@ import type { ICardWithLink } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { clickableSx } from '@/theme';
 
-import cgvTheater from '@/assets/quickLinkImages/01_cgv_theater.png';
+import usthTheater from '@/assets/quickLinkImages/01_usth_theater.png';
 import nowShowing from '@/assets/quickLinkImages/02_phim_dang_chieu.png';
-import cgvSpecial from '@/assets/quickLinkImages/03_cgv_special.png';
-import cgvMember from '@/assets/quickLinkImages/04_cgv_member.png';
-import lienHeCgv from '@/assets/quickLinkImages/05_lien_he_cgv.png';
+import usthSpecial from '@/assets/quickLinkImages/03_usth_special.png';
+import usthMember from '@/assets/quickLinkImages/04_usth_member_labelled.png';
+import lienHeUsth from '@/assets/quickLinkImages/05_lien_he_usth.png';
 import newsOffers from '@/assets/quickLinkImages/06_news_offers.png';
 import registerNow from '@/assets/quickLinkImages/07_register_now.png';
 
-interface QuickLinkCard extends ICardWithLink {
+interface QuickLinkCard extends Omit<ICardWithLink, 'linkTo'> {
   label: string;
+  linkTo?: string;
 }
 
 const cards: QuickLinkCard[] = [
-  { label: 'Rạp chiếu', image: cgvTheater, linkTo: '/booking' },
-  { label: 'Phim đang chiếu', image: nowShowing, linkTo: '/now_showing' },
-  { label: 'CGV Special', image: cgvSpecial, linkTo: '/special_room' },
-  { label: 'Thuê phòng', image: cgvMember, linkTo: '/booking' },
-  { label: 'Liên hệ CGV', image: lienHeCgv, linkTo: '/contact' },
-  { label: 'Tin mới và ưu đãi', image: newsOffers, linkTo: '/new_and_sale' },
+  { label: 'Rạp chiếu', image: usthTheater, linkTo: '/cinemas' },
+  { label: 'Phim đang chiếu', image: nowShowing, linkTo: '/booking' },
+  { label: 'USTH Special', image: usthSpecial, linkTo: '/event' },
+  { label: 'Thuê phòng', image: usthMember, linkTo: '/cinemas' },
+  { label: 'Liên hệ USTH', image: lienHeUsth },
+  { label: 'Tin mới và ưu đãi', image: newsOffers, linkTo: '/event' },
   { label: 'Đăng ký thành viên', image: registerNow, linkTo: '/signup' },
 ];
 
@@ -33,11 +34,11 @@ const QuickLinks: React.FC = () => {
         {cards.map((card) => (
           <Box
             className="quick-link-card"
-            sx={clickableSx}
-            key={card.linkTo}
-            onClick={() => navigate(card.linkTo)}
-            role="link"
-            tabIndex={0}
+            sx={card.linkTo ? clickableSx : { cursor: 'default' }}
+            key={card.label}
+            onClick={() => card.linkTo && navigate(card.linkTo)}
+            role={card.linkTo ? 'link' : undefined}
+            tabIndex={card.linkTo ? 0 : -1}
             aria-label={card.label}
           >
             <Box

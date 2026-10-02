@@ -48,7 +48,14 @@ def list_cinema_rooms():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, room_number, name, type, capacity FROM cinema_rooms ORDER BY room_number")
+            cur.execute(
+                """SELECT cr.id, cr.room_number, cr.name, cr.type, cr.capacity,
+                          cr.ticket_price,
+                          c.name AS cinema_name
+                   FROM cinema_rooms cr
+                   JOIN cinemas c ON c.id = cr.cinema_id
+                   ORDER BY cr.room_number"""
+            )
             rooms = cur.fetchall()
         return jsonify({"cinema_rooms": rooms})
     finally:
@@ -163,7 +170,7 @@ def list_showtimes():
         with conn.cursor() as cur:
             cur.execute(
                 f"""SELECT s.*, m.title AS movie_title, m.title_vn,
-                           m.poster, m.base_price, r.id AS cinema_room_id,
+                           m.poster, r.ticket_price AS base_price, r.id AS cinema_room_id,
                            r.name AS cinema_room_name, r.type AS room_type
                     FROM showtimes s
                     JOIN movies m ON m.id = s.movie_id
@@ -228,8 +235,9 @@ def create_booking():
     try:
         with conn.cursor() as cur:
             cur.execute(
-                """SELECT s.movie_id, s.cinema_room_number, m.base_price
-                   FROM showtimes s JOIN movies m ON m.id = s.movie_id
+                """SELECT s.movie_id, s.cinema_room_number, cr.ticket_price AS base_price
+                   FROM showtimes s
+                   JOIN cinema_rooms cr ON cr.room_number = s.cinema_room_number
                    WHERE s.id = %s FOR UPDATE OF s""",
                 (showtime_id,),
             )

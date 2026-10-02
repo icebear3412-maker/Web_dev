@@ -6,36 +6,36 @@ import { useRef } from 'react';
 
 import 'swiper/css';
 
-import eventOne from '@/assets/event/240x201_14_.png';
-import eventTwo from '@/assets/event/birthday_popcorn_box_240x201.png';
-import eventThree from '@/assets/event/n_o-hoan-ve-240x201.jpg';
-import eventFour from '@/assets/event/onl_n_o_240x201_6_.png';
-import eventFive from '@/assets/event/online_package_240x201_1_.png';
+import eventOne from '@/assets/event/member-offer-usth.jpg';
+import eventTwo from '@/assets/event/birthday-offer-usth.jpg';
+import eventThree from '@/assets/event/ticket-refund-usth.jpg';
+import eventFour from '@/assets/event/fixed-price-offer-usth.jpg';
+import eventFive from '@/assets/event/online-package-usth.jpg';
 import type { ICardWithDescription } from '@/types';
 
 export const Events: ICardWithDescription[] = [
   {
     image: eventOne,
-    title: 'Ưu đãi thành viên CGV',
+    title: 'Ưu đãi thành viên USTH',
     text: 'Khám phá các ưu đãi dành cho thành viên.',
     linkTo: '/events/uu-dai-thanh-vien',
   },
   {
     image: eventTwo,
     title: 'Quà tặng sinh nhật',
-    text: 'Ưu đãi sinh nhật dành cho thành viên CGV.',
+    text: 'Ưu đãi sinh nhật dành cho thành viên USTH.',
     linkTo: '/events/qua-tang-sinh-nhat',
   },
   {
     image: eventThree,
     title: 'Ưu đãi hoàn vé',
-    text: 'Cập nhật chương trình ưu đãi tại CGV.',
+    text: 'Cập nhật chương trình ưu đãi tại USTH.',
     linkTo: '/events/uu-dai-hoan-ve',
   },
   {
     image: eventFour,
-    title: 'Ưu đãi CGV',
-    text: 'Ưu đãi mới nhất từ CGV.',
+    title: 'Ưu đãi USTH',
+    text: 'Ưu đãi mới nhất từ USTH.',
     linkTo: '/events/uu-dai-cgv',
   },
   {

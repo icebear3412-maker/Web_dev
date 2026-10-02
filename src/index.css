@@ -81,8 +81,8 @@ button {
 .brand-logo-link img {
   display: block;
   width: auto;
-  height: 64px;
-  max-width: 190px;
+  height: 72px;
+  max-width: 210px;
   object-fit: contain;
 }
 .main-menu {
@@ -623,8 +623,8 @@ button {
     min-height: auto;
   }
   .brand-logo-link img {
-    height: 48px;
-    max-width: 145px;
+    height: 52px;
+    max-width: 155px;
   }
   .main-menu {
     gap: 0;

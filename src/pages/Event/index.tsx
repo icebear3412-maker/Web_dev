@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from 'react';
-
-import QuickLinks from '@/pages/Landing/QuickLink';
-import CarouselSection from '@/pages/Landing/Carousel';
-import MovieSection from '@/pages/Landing/movie';
-import EventSection from '@/pages/Landing/event';
-import PartnerLine from '@/pages/Landing/partner';
-import SideBanners from '@/pages/Landing/SideBanner';
-import { fetchMovies, type Movie } from '@/services/movies';
 import { Alert, Box, CircularProgress } from '@mui/material';
 
-const FrontPage: React.FC = () => {
+import CarouselSection from '@/pages/Landing/Carousel';
+import { fetchMovies, type Movie } from '@/services/movies';
+
+const EventPage: React.FC = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [movieError, setMovieError] = useState('');
@@ -19,19 +14,19 @@ const FrontPage: React.FC = () => {
     fetchMovies(controller.signal)
       .then(setMovies)
       .catch((error: unknown) => {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setMovieError(error instanceof Error ? error.message : 'Không tải được phim.');
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+
     return () => controller.abort();
   }, []);
 
   return (
     <div className="cgv-page">
-      <SideBanners />
-      <QuickLinks />
       <CarouselSection movies={movies} />
       {movieError && (
         <Alert severity="warning" className="api-message">
@@ -43,11 +38,8 @@ const FrontPage: React.FC = () => {
           <CircularProgress size={24} /> Đang tải phim…
         </Box>
       )}
-      <MovieSection movies={movies} />
-      <EventSection />
-      <PartnerLine />
     </div>
   );
 };
 
-export default FrontPage;
+export default EventPage;
