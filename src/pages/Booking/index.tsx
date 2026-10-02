@@ -1,7 +1,12 @@
 import {
+  Alert,
   Box,
   Button,
+  Card,
+  CardContent,
+  CardMedia,
   Container,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -11,16 +16,24 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import type {
-  IMovieInfoPayload,
-  IMovieShowTime,
-  IMovieShowday,
-  IRoomDetailResPayload,
-} from '../../types';
+import { useNavigate } from 'react-router-dom';
+import type { IMovieShowTime, IMovieShowday, IRoomDetailResPayload } from '../../types';
+import { API_BASE_URL } from '@/services/movies';
 
-interface Movie extends Partial<IMovieInfoPayload> {
-  id?: string | number;
-  base_price?: number;
+interface Movie {
+  id: string;
+  title: string;
+  title_vn?: string | null;
+  poster?: string | null;
+  genre?: string | null;
+  director?: string | null;
+  cast?: string | null;
+  duration?: number | string | null;
+  release_date?: string | null;
+  age_rating?: string | null;
+  rating?: number | null;
+  synopsis?: string | null;
+  base_price?: number | null;
 }
 
 interface Showtime {
@@ -44,92 +57,15 @@ interface Seat {
 
 interface ApiShowtime {
   id: string;
-  date: string;
-  start_time: string;
+  show_date?: string;
+  show_time?: string;
+  date?: string;
+  start_time?: string;
   end_time?: string;
   cinema_room_number?: string | number;
+  cinema_room_name?: string;
   base_price?: number;
 }
-
-const API_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-const mockMovie: Movie = {
-  id: 'mock-movie',
-  name: 'Movie Title',
-  genre: 'Action, Adventure',
-  director: 'Director',
-  actor: 'Actor',
-  time: 120,
-  releaseDate: '2026-01-01',
-  rating: 8,
-  description: 'Movie description.',
-  base_price: 100000,
-};
-
-const mockShowtimes: Showtime[] = [
-  {
-    id: 'mock-1',
-    date: '2026-10-01',
-    startTime: '09:00',
-    endTime: '11:00',
-    room: 1,
-    price: 100000,
-    time: [9, 0],
-  },
-  {
-    id: 'mock-2',
-    date: '2026-10-01',
-    startTime: '13:00',
-    endTime: '15:00',
-    room: 1,
-    price: 100000,
-    time: [13, 0],
-  },
-  {
-    id: 'mock-3',
-    date: '2026-10-01',
-    startTime: '19:00',
-    endTime: '21:00',
-    room: 2,
-    price: 100000,
-    time: [19, 0],
-  },
-  {
-    id: 'mock-4',
-    date: '2026-10-02',
-    startTime: '10:00',
-    endTime: '12:00',
-    room: 1,
-    price: 100000,
-    time: [10, 0],
-  },
-  {
-    id: 'mock-5',
-    date: '2026-10-02',
-    startTime: '20:00',
-    endTime: '22:00',
-    room: 2,
-    price: 100000,
-    time: [20, 0],
-  },
-];
-
-const createMockSeats = (): Seat[] =>
-  Array.from({ length: 18 }, (_, index) => {
-    const row = String.fromCharCode(
-      65 + Math.floor(index / 6),
-    );
-    const number = (index % 6) + 1;
-
-    return {
-      id: `mock-seat-${index + 1}`,
-      seat_code: `${row}${number}`,
-      row_label: row,
-      seat_number: number,
-      booked: [1, 7, 14].includes(index),
-    };
-  });
 
 const getDate = (value: string) => {
   const date = new Date(value);
@@ -143,20 +79,23 @@ const formatTime = (value?: string) =>
   value ? value.slice(0, 5) : '';
 
 const convertShowtime = (item: ApiShowtime): Showtime => {
-  const [hour = 0, minute = 0] = item.start_time
+  const startTime = item.show_time || item.start_time || '';
+  const [hour = 0, minute = 0] = startTime
     .split(':')
     .map(Number);
 
   return {
     id: String(item.id),
-    date: item.date,
-    startTime: formatTime(item.start_time),
+    date: item.show_date || item.date || '',
+    startTime: formatTime(startTime),
     endTime: formatTime(item.end_time),
-    room: item.cinema_room_number,
+    room: item.cinema_room_name || item.cinema_room_number,
     price: item.base_price ?? 100000,
     time: [hour, minute],
   };
 };
+
+const getMovieTitle = (movie: Movie) => movie.title_vn?.trim() || movie.title;
 
 const createRoom = (
   seats: Seat[],
@@ -180,6 +119,7 @@ const createRoom = (
 };
 
 const BookingPage = () => {
+  const navigate = useNavigate();
   const movieId = new URLSearchParams(
     window.location.search,
   ).get('movieId');
@@ -188,6 +128,7 @@ const BookingPage = () => {
     localStorage.getItem('access_token') ||
     localStorage.getItem('token');
 
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
@@ -206,64 +147,72 @@ const BookingPage = () => {
   const [seatOpen, setSeatOpen] = useState(false);
 
   const [loadingMovie, setLoadingMovie] = useState(false);
+  const [movieError, setMovieError] = useState('');
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [loadingSeats, setLoadingSeats] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [bookingReference, setBookingReference] = useState('');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const loadMovie = async () => {
+    const controller = new AbortController();
+    const loadMovies = async () => {
       setLoadingMovie(true);
-
-      if (!movieId) {
-        setMovie(mockMovie);
-        setLoadingMovie(false);
-        return;
-      }
+      setMovieError('');
 
       try {
-        const response = await fetch(
-          `${API_URL}/movies/${movieId}`,
-        );
+        if (movieId) {
+          const response = await fetch(
+            `${API_BASE_URL}/movies/${encodeURIComponent(movieId)}`,
+            { signal: controller.signal },
+          );
+          if (!response.ok) throw new Error('Không tìm thấy phim trong database.');
 
-        if (!response.ok) throw new Error();
+          const data = await response.json();
+          if (!data.movie) throw new Error('Không tìm thấy phim trong database.');
+          setMovie(data.movie);
+          return;
+        }
+
+        setMovie(null);
+        const response = await fetch(`${API_BASE_URL}/movies?status=showing`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Không tải được danh sách phim.');
 
         const data = await response.json();
-        setMovie(data.movie || mockMovie);
-      } catch {
-        setMovie({ ...mockMovie, id: movieId });
+        setMovies(Array.isArray(data.movies) ? data.movies : []);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setMovie(null);
+        setMovies([]);
+        setMovieError(
+          error instanceof Error
+            ? error.message
+            : 'Không kết nối được tới database phim.',
+        );
       } finally {
-        setLoadingMovie(false);
+        if (!controller.signal.aborted) setLoadingMovie(false);
       }
     };
 
-    loadMovie();
+    loadMovies();
+    return () => controller.abort();
   }, [movieId]);
 
-  const loadShowtimes = async (date?: string) => {
+  const loadShowtimes = async (selectedMovieId: string, date?: string) => {
     setLoadingTimes(true);
     setMessage('');
 
-    if (!movieId) {
-      setShowtimes(
-        date
-          ? mockShowtimes.filter((item) => item.date === date)
-          : mockShowtimes,
-      );
-      setLoadingTimes(false);
-      return;
-    }
-
     try {
-      const query = date
-        ? `?movie_id=${movieId}&date=${date}`
-        : `?movie_id=${movieId}`;
+      const params = new URLSearchParams({ movie_id: selectedMovieId });
+      if (date) params.set('date', date);
 
       const response = await fetch(
-        `${API_URL}/bookings/showtimes${query}`,
+        `${API_BASE_URL}/bookings/showtimes?${params.toString()}`,
       );
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error('Không tải được lịch chiếu.');
 
       const data = await response.json();
       const items: ApiShowtime[] = Array.isArray(data)
@@ -271,27 +220,30 @@ const BookingPage = () => {
         : data.showtimes || [];
 
       setShowtimes(items.map(convertShowtime));
-    } catch {
-      setShowtimes(
-        date
-          ? mockShowtimes.filter((item) => item.date === date)
-          : mockShowtimes,
+    } catch (error) {
+      setShowtimes([]);
+      setMessage(
+        error instanceof Error ? error.message : 'Không tải được lịch chiếu.',
       );
     } finally {
       setLoadingTimes(false);
     }
   };
 
-  const openDates = async () => {
+  const openDates = async (selectedMovie: Movie | null = movie) => {
+    if (!selectedMovie) return;
+    setMovie(selectedMovie);
+    setSelectedDate('');
+    setSelectedShowtime(null);
     setDateOpen(true);
-    await loadShowtimes();
+    await loadShowtimes(selectedMovie.id);
   };
 
   const selectDate = async (date: string) => {
     setSelectedDate(date);
     setDateOpen(false);
     setTimeOpen(true);
-    await loadShowtimes(date);
+    if (movie) await loadShowtimes(movie.id, date);
   };
 
   const selectShowtime = async (showtime: Showtime) => {
@@ -301,34 +253,26 @@ const BookingPage = () => {
     setLoadingSeats(true);
 
     try {
-      if (showtime.id.startsWith('mock-')) {
-        const mockSeats = createMockSeats();
-        setSeats(mockSeats);
-        setRoom(createRoom(mockSeats, showtime.price));
-      } else {
-        const response = await fetch(
-          `${API_URL}/bookings/showtimes/${showtime.id}/seats`,
-        );
+      const response = await fetch(
+        `${API_BASE_URL}/bookings/showtimes/${showtime.id}/seats`,
+      );
+      if (!response.ok) throw new Error('Không tải được sơ đồ ghế.');
 
-        if (!response.ok) throw new Error();
+      const data = await response.json();
+      const items: Seat[] = Array.isArray(data)
+        ? data
+        : data.seats || [];
+      if (!items.length) throw new Error('Suất chiếu này chưa có ghế trong database.');
 
-        const data = await response.json();
-        const items: Seat[] = Array.isArray(data)
-          ? data
-          : data.seats || [];
-
-        setSeats(items);
-        setRoom(createRoom(items, showtime.price));
-      }
+      setSeats(items);
+      setRoom(createRoom(items, showtime.price));
 
       setTimeOpen(false);
       setSeatOpen(true);
-    } catch {
-      const mockSeats = createMockSeats();
-      setSeats(mockSeats);
-      setRoom(createRoom(mockSeats, showtime.price));
-      setTimeOpen(false);
-      setSeatOpen(true);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : 'Không tải được sơ đồ ghế.',
+      );
     } finally {
       setLoadingSeats(false);
     }
@@ -356,29 +300,25 @@ const BookingPage = () => {
   };
 
   const book = async () => {
+    if (!token) {
+      setMessage('Vui lòng đăng nhập trước khi đặt vé.');
+      return;
+    }
     if (!selectedShowtime || !selectedSeats.length) {
       setMessage('Please select at least one seat.');
       return;
     }
 
-    if (selectedShowtime.id.startsWith('mock-')) {
-      setMessage(
-        'Mock data cannot be booked. Please use backend data.',
-      );
-      return;
-    }
-
     setBooking(true);
     setMessage('');
+    setBookingReference('');
 
     try {
-      const response = await fetch(`${API_URL}/bookings`, {
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token
-            ? { Authorization: `Bearer ${token}` }
-            : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           showtime_id: selectedShowtime.id,
@@ -389,12 +329,32 @@ const BookingPage = () => {
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(
-          data?.message || data?.detail || 'Booking failed.',
+          data?.error || data?.message || data?.detail || 'Booking failed.',
         );
       }
 
-      setMessage('Booking successful.');
+      const result = await response.json();
+      const bookingReference = result.booking?.booking_ref;
+      if (!bookingReference) throw new Error('Đặt vé thành công nhưng không nhận được mã vé.');
+      setBookingReference(bookingReference);
+      setMessage(`Đặt vé thành công! Mã vé của bạn: ${bookingReference}`);
       setSelectedSeats([]);
+
+      try {
+        const seatsResponse = await fetch(
+          `${API_BASE_URL}/bookings/showtimes/${selectedShowtime.id}/seats`,
+        );
+        if (seatsResponse.ok) {
+          const seatsResult = await seatsResponse.json();
+          const refreshedSeats: Seat[] = Array.isArray(seatsResult)
+            ? seatsResult
+            : seatsResult.seats || [];
+          setSeats(refreshedSeats);
+          setRoom(createRoom(refreshedSeats, selectedShowtime.price));
+        }
+      } catch {
+        // The reservation is already saved; a seat-map refresh can be retried by reopening the showtime.
+      }
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -452,38 +412,107 @@ const BookingPage = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
       <Paper sx={{ p: 4 }}>
-        <Typography variant="h4" fontWeight="bold">
-          Booking
+        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+          {movieId ? 'Đặt vé phim' : 'Chọn phim'}
         </Typography>
 
         {loadingMovie ? (
-          <Typography sx={{ mt: 2 }}>
-            Loading movie...
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress aria-label="Đang tải danh sách phim" />
+          </Box>
+        ) : movieError ? (
+          <Alert severity="error" sx={{ mt: 2 }}>{movieError}</Alert>
+        ) : movieId ? (
+          movie ? (
+            <>
+              <Typography variant="h5" sx={{ mt: 2 }}>
+                {getMovieTitle(movie)}
+              </Typography>
+              <Typography sx={{ mt: 1 }}>
+                {movie.synopsis || 'Chọn lịch chiếu để tiếp tục đặt vé.'}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+                <Button variant="outlined" onClick={() => setMovieOpen(true)}>
+                  Thông tin phim
+                </Button>
+                <Button variant="contained" onClick={() => openDates(movie)}>
+                  Đặt vé
+                </Button>
+              </Box>
+            </>
+          ) : null
+        ) : !movies.length ? (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Database chưa có phim đang chiếu để đặt vé.
+          </Alert>
         ) : (
-          <>
-            <Typography variant="h5" sx={{ mt: 2 }}>
-              {movie?.name || 'Movie'}
-            </Typography>
-
-            <Typography sx={{ mt: 1 }}>
-              {movie?.description ||
-                'Select a showtime to book tickets.'}
-            </Typography>
-
-            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-              <Button
-                variant="outlined"
-                onClick={() => setMovieOpen(true)}
-              >
-                Movie Information
-              </Button>
-
-              <Button variant="contained" onClick={openDates}>
-                Book Now
-              </Button>
-            </Box>
-          </>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            {movies.map((item) => {
+              const title = getMovieTitle(item);
+              return (
+                <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    {item.poster ? (
+                      <CardMedia
+                        component="img"
+                        image={item.poster}
+                        alt={`Poster phim ${title}`}
+                        sx={{ height: 320, objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          height: 320,
+                          display: 'grid',
+                          placeItems: 'center',
+                          bgcolor: '#f2eee5',
+                          color: '#70675d',
+                        }}
+                      >
+                        Chưa có poster
+                      </Box>
+                    )}
+                    <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                      {item.age_rating && (
+                        <Typography variant="caption" color="error" sx={{ fontWeight: 700 }}>
+                          {item.age_rating}
+                        </Typography>
+                      )}
+                      <Typography variant="h6" sx={{ fontWeight: 700, minHeight: 56 }}>
+                        {title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {[item.genre, item.duration ? `${item.duration} phút` : null]
+                          .filter(Boolean)
+                          .join(' · ') || 'Thông tin phim đang được cập nhật'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            setMovie(item);
+                            setMovieOpen(true);
+                          }}
+                        >
+                          Chi tiết
+                        </Button>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="contained"
+                          onClick={() => openDates(item)}
+                        >
+                          Đặt vé
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
         )}
       </Paper>
 
@@ -494,53 +523,68 @@ const BookingPage = () => {
         maxWidth="sm"
       >
         <DialogTitle>
-          {movie?.name || 'Movie Information'}
+          {movie ? getMovieTitle(movie) : 'Thông tin phim'}
         </DialogTitle>
 
         <DialogContent dividers>
-          {movie?.image && (
+          {movie?.poster && (
             <Box
               component="img"
-              src={movie.image}
-              alt={movie.name || 'Movie'}
+              src={movie.poster}
+              alt={getMovieTitle(movie)}
               sx={{
-                width: '100%',
-                maxHeight: 300,
-                objectFit: 'cover',
+                display: 'block',
+                width: 'auto',
+                height: 'auto',
+                maxWidth: '100%',
+                maxHeight: 'min(65vh, 560px)',
+                objectFit: 'contain',
+                mx: 'auto',
                 mb: 2,
               }}
             />
           )}
 
           <Typography>
-            <b>Genre:</b> {movie?.genre || 'N/A'}
+            <b>Thể loại:</b> {movie?.genre || 'Đang cập nhật'}
           </Typography>
           <Typography>
-            <b>Director:</b> {movie?.director || 'N/A'}
+            <b>Đạo diễn:</b> {movie?.director || 'Đang cập nhật'}
           </Typography>
           <Typography>
-            <b>Actor:</b> {movie?.actor || 'N/A'}
+            <b>Diễn viên:</b> {movie?.cast || 'Đang cập nhật'}
           </Typography>
           <Typography>
-            <b>Duration:</b>{' '}
-            {movie?.time ? `${movie.time} minutes` : 'N/A'}
+            <b>Thời lượng:</b>{' '}
+            {movie?.duration ? `${movie.duration} phút` : 'Đang cập nhật'}
           </Typography>
           <Typography>
-            <b>Release:</b> {movie?.releaseDate || 'N/A'}
+            <b>Khởi chiếu:</b> {movie?.release_date || 'Đang cập nhật'}
           </Typography>
           <Typography>
-            <b>Rating:</b> {movie?.rating ?? 'N/A'}
+            <b>Đánh giá:</b> {movie?.rating ?? 'Đang cập nhật'}
           </Typography>
 
           <Typography sx={{ mt: 2 }}>
-            {movie?.description || 'No description available.'}
+            {movie?.synopsis || 'Chưa có nội dung phim.'}
           </Typography>
         </DialogContent>
 
         <DialogActions>
           <Button onClick={() => setMovieOpen(false)}>
-            Close
+            Đóng
           </Button>
+          {movie && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                setMovieOpen(false);
+                void openDates(movie);
+              }}
+            >
+              Đặt vé
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -556,7 +600,7 @@ const BookingPage = () => {
           {loadingTimes ? (
             <Typography>Loading show dates...</Typography>
           ) : !dates.length ? (
-            <Typography>No show dates available.</Typography>
+            <Typography>{message || 'Chưa có lịch chiếu cho phim này trong database.'}</Typography>
           ) : (
             <Grid container spacing={2}>
               {dates.map((item) => {
@@ -567,7 +611,7 @@ const BookingPage = () => {
                 )}-${String(day).padStart(2, '0')}`;
 
                 return (
-                  <Grid item xs={12} sm={6} key={value}>
+                  <Grid size={{ xs: 12, sm: 6 }} key={value}>
                     <Button
                       fullWidth
                       variant="outlined"
@@ -598,6 +642,7 @@ const BookingPage = () => {
         <DialogTitle>Select showtime</DialogTitle>
 
         <DialogContent dividers>
+          {message && <Alert severity="error" sx={{ mb: 2 }}>{message}</Alert>}
           {loadingTimes ? (
             <Typography>Loading showtimes...</Typography>
           ) : !currentShowtimes.length ? (
@@ -607,7 +652,7 @@ const BookingPage = () => {
           ) : (
             <Grid container spacing={2}>
               {currentShowtimes.map((showtime) => (
-                <Grid item xs={12} sm={6} key={showtime.id}>
+                <Grid size={{ xs: 12, sm: 6 }} key={showtime.id}>
                   <Button
                     fullWidth
                     variant="outlined"
@@ -659,7 +704,7 @@ const BookingPage = () => {
             <Typography>Loading seats...</Typography>
           ) : (
             <Grid container spacing={4}>
-              <Grid item xs={12} md={8}>
+              <Grid size={{ xs: 12, md: 8 }}>
                 <Box
                   sx={{
                     textAlign: 'center',
@@ -762,7 +807,7 @@ const BookingPage = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <Paper
                   variant="outlined"
                   sx={{
@@ -770,12 +815,12 @@ const BookingPage = () => {
                     height: '100%',
                   }}
                 >
-                  <Typography variant="h6" fontWeight="bold">
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     Booking Summary
                   </Typography>
 
                   <Typography sx={{ mt: 2 }}>
-                    <b>Movie:</b> {movie?.name || 'Movie'}
+                    <b>Movie:</b> {movie ? getMovieTitle(movie) : '—'}
                   </Typography>
 
                   <Typography>
@@ -812,16 +857,26 @@ const BookingPage = () => {
                   </Typography>
 
                   {message && (
-                    <Typography
-                      sx={{ mt: 2 }}
-                      color={
-                        message === 'Booking successful.'
-                          ? 'success.main'
-                          : 'error.main'
-                      }
-                    >
-                      {message}
-                    </Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography
+                        color={
+                          message.startsWith('Đặt vé thành công!')
+                            ? 'success.main'
+                            : 'error.main'
+                        }
+                      >
+                        {message}
+                      </Typography>
+                      {bookingReference && (
+                        <Button
+                          size="small"
+                          sx={{ mt: 1, textTransform: 'none' }}
+                          onClick={() => navigate(`/check_ticket?reference=${encodeURIComponent(bookingReference)}`)}
+                        >
+                          Xem vé bằng mã này
+                        </Button>
+                      )}
+                    </Box>
                   )}
                 </Paper>
               </Grid>

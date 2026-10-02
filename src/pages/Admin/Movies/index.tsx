@@ -32,6 +32,14 @@ import type { MovieForm, MovieItem, Screening } from '../../../types';
 
 const API = '/api/admin/movies';
 
+const adminHeaders = (json = false): Record<string, string> => {
+  const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 interface Room {
   room_number: number;
   name: string;
@@ -144,10 +152,10 @@ export default function MovieListPage() {
 
   const loadMovies = async () => {
     try {
-      const response = await fetch(API);
+      const response = await fetch(API, { headers: adminHeaders() });
 
       if (!response.ok) {
-        throw new Error('Failed to load movies.');
+        throw new Error('Không tải được danh sách phim.');
       }
 
       const data = await response.json();
@@ -156,6 +164,7 @@ export default function MovieListPage() {
         data.map(async (movie: any) => {
           const screeningResponse = await fetch(
             `${API}/${movie.id}/screenings`,
+            { headers: adminHeaders() },
           );
 
           const screenings = screeningResponse.ok
@@ -190,16 +199,16 @@ export default function MovieListPage() {
       setMovies(result);
     } catch (error) {
       console.error(error);
-      showToast('Cannot load movies from the server.', 'error');
+      showToast('Không thể tải danh sách phim từ máy chủ.', 'error');
     }
   };
 
   const loadRooms = async () => {
     try {
-      const response = await fetch(`${API}/rooms`);
+      const response = await fetch(`${API}/rooms`, { headers: adminHeaders() });
 
       if (!response.ok) {
-        throw new Error('Failed to load rooms.');
+        throw new Error('Không tải được danh sách phòng chiếu.');
       }
 
       const data = await response.json();
@@ -220,7 +229,7 @@ export default function MovieListPage() {
       }
     } catch (error) {
       console.error(error);
-      showToast('Cannot load cinema rooms.', 'error');
+      showToast('Không thể tải danh sách phòng chiếu.', 'error');
     }
   };
 
@@ -251,53 +260,52 @@ export default function MovieListPage() {
     const trailerUrl = form.trailerUrl.trim();
 
     if (!title) {
-      errors.title = 'Movie title is required.';
+      errors.title = 'Vui lòng nhập tên phim.';
     } else if (title.length < 2) {
-      errors.title = 'Movie title must contain at least 2 characters.';
+      errors.title = 'Tên phim phải có ít nhất 2 ký tự.';
     } else if (title.length > 255) {
-      errors.title = 'Movie title must not exceed 255 characters.';
+      errors.title = 'Tên phim không được vượt quá 255 ký tự.';
     }
 
     if (!genre) {
-      errors.genre = 'Genre is required.';
+      errors.genre = 'Vui lòng nhập thể loại phim.';
     } else if (genre.length > 100) {
-      errors.genre = 'Genre must not exceed 100 characters.';
+      errors.genre = 'Thể loại không được vượt quá 100 ký tự.';
     }
 
     if (!form.duration) {
-      errors.duration = 'Duration is required.';
+      errors.duration = 'Vui lòng nhập thời lượng phim.';
     } else if (
       !Number.isInteger(Number(form.duration)) ||
       Number(form.duration) <= 0
     ) {
-      errors.duration = 'Duration must be a positive whole number.';
+      errors.duration = 'Thời lượng phải là số nguyên lớn hơn 0.';
     } else if (Number(form.duration) > 600) {
-      errors.duration = 'Duration cannot exceed 600 minutes.';
+      errors.duration = 'Thời lượng không được vượt quá 600 phút.';
     }
 
     if (!form.releaseDate) {
-      errors.releaseDate = 'Release date is required.';
+      errors.releaseDate = 'Vui lòng chọn ngày khởi chiếu.';
     } else if (!isValidDate(form.releaseDate)) {
-      errors.releaseDate = 'Please enter a valid release date.';
+      errors.releaseDate = 'Ngày khởi chiếu không hợp lệ.';
     }
 
     if (!image) {
-      errors.image = 'Poster URL is required.';
+      errors.image = 'Vui lòng nhập đường dẫn áp phích.';
     } else if (!isValidUrl(image)) {
-      errors.image = 'Please enter a valid HTTP/HTTPS URL.';
+      errors.image = 'Vui lòng nhập đường dẫn HTTP hoặc HTTPS hợp lệ.';
     }
 
     if (!trailerUrl) {
-      errors.trailerUrl = 'Trailer URL is required.';
+      errors.trailerUrl = 'Vui lòng nhập đường dẫn trailer.';
     } else if (!isValidUrl(trailerUrl)) {
-      errors.trailerUrl = 'Please enter a valid HTTP/HTTPS URL.';
+      errors.trailerUrl = 'Vui lòng nhập đường dẫn HTTP hoặc HTTPS hợp lệ.';
     }
 
     if (!description) {
-      errors.description = 'Description is required.';
+      errors.description = 'Vui lòng nhập mô tả phim.';
     } else if (description.length < 10) {
-      errors.description =
-        'Description must contain at least 10 characters.';
+      errors.description = 'Mô tả phim phải có ít nhất 10 ký tự.';
     }
 
     setMovieErrors(errors);
@@ -305,13 +313,13 @@ export default function MovieListPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const validateScreening = () => {
+  const validateScreening = (movie: MovieItem) => {
     const errors: ScreeningErrors = {};
 
     if (!screening.date) {
-      errors.date = 'Screening date is required.';
+      errors.date = 'Vui lòng chọn ngày chiếu.';
     } else if (!isValidDate(screening.date)) {
-      errors.date = 'Please enter a valid date.';
+      errors.date = 'Ngày chiếu không hợp lệ.';
     } else {
       const selectedDate = new Date(
         `${screening.date}T00:00:00`,
@@ -321,32 +329,31 @@ export default function MovieListPage() {
       today.setHours(0, 0, 0, 0);
 
       if (selectedDate < today) {
-        errors.date = 'Screening date cannot be in the past.';
+        errors.date = 'Ngày chiếu không được ở quá khứ.';
       }
 
       if (
-        editMovie?.releaseDate &&
+        movie.releaseDate &&
         selectedDate <
-          new Date(`${editMovie.releaseDate}T00:00:00`)
+          new Date(`${movie.releaseDate}T00:00:00`)
       ) {
-        errors.date =
-          'Screening date cannot be before the movie release date.';
+        errors.date = 'Ngày chiếu không được trước ngày khởi chiếu của phim.';
       }
     }
 
     if (!screening.time) {
-      errors.time = 'Screening time is required.';
+      errors.time = 'Vui lòng chọn giờ chiếu.';
     }
 
     if (!screening.room) {
-      errors.room = 'Cinema room is required.';
+      errors.room = 'Vui lòng chọn phòng chiếu.';
     } else if (
       !rooms.some(
         (room) =>
           String(room.room_number) === String(screening.room),
       )
     ) {
-      errors.room = 'Please select a valid cinema room.';
+      errors.room = 'Vui lòng chọn phòng chiếu hợp lệ.';
     }
 
     setScreeningErrors(errors);
@@ -387,10 +394,7 @@ export default function MovieListPage() {
 
   const saveMovie = async () => {
     if (!validateMovie()) {
-      showToast(
-        'Please correct the highlighted fields.',
-        'warning',
-      );
+      showToast('Vui lòng kiểm tra các thông tin được đánh dấu.', 'warning');
       return;
     }
 
@@ -409,9 +413,7 @@ export default function MovieListPage() {
         editMovie ? `${API}/${editMovie.id}` : API,
         {
           method: editMovie ? 'PATCH' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: adminHeaders(true),
           body: JSON.stringify(
             editMovie
               ? body
@@ -427,7 +429,7 @@ export default function MovieListPage() {
 
       if (!response.ok) {
         showToast(
-          data?.error || 'Cannot save movie.',
+          data?.error || 'Không thể lưu phim.',
           'error',
         );
         return;
@@ -438,31 +440,32 @@ export default function MovieListPage() {
 
       showToast(
         editMovie
-          ? 'Movie updated successfully.'
-          : 'Movie created successfully.',
+          ? 'Cập nhật phim thành công.'
+          : 'Thêm phim thành công.',
         'success',
       );
     } catch (error) {
       console.error(error);
-      showToast('Cannot connect to backend.', 'error');
+      showToast('Không thể kết nối đến máy chủ.', 'error');
     }
   };
 
   const deleteMovie = async (movie: MovieItem) => {
-    if (!window.confirm(`Delete "${movie.title}"?`)) {
+    if (!window.confirm(`Bạn có chắc muốn xóa phim “${movie.title}” không?`)) {
       return;
     }
 
     try {
       const response = await fetch(`${API}/${movie.id}`, {
         method: 'DELETE',
+        headers: adminHeaders(),
       });
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
         showToast(
-          data?.error || 'Cannot delete movie.',
+          data?.error || 'Không thể xóa phim.',
           'error',
         );
         return;
@@ -472,10 +475,10 @@ export default function MovieListPage() {
         prev.filter((item) => item.id !== movie.id),
       );
 
-      showToast('Movie deleted successfully.', 'success');
+      showToast('Đã xóa phim.', 'success');
     } catch (error) {
       console.error(error);
-      showToast('Cannot connect to backend.', 'error');
+      showToast('Không thể kết nối đến máy chủ.', 'error');
     }
   };
 
@@ -486,9 +489,7 @@ export default function MovieListPage() {
     try {
       const response = await fetch(`${API}/${movie.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: adminHeaders(true),
         body: JSON.stringify({ status }),
       });
 
@@ -496,7 +497,7 @@ export default function MovieListPage() {
 
       if (!response.ok) {
         showToast(
-          data?.error || 'Cannot change movie status.',
+          data?.error || 'Không thể thay đổi trạng thái phim.',
           'error',
         );
         return;
@@ -516,24 +517,16 @@ export default function MovieListPage() {
         ),
       );
 
-      showToast(
-        status === 'showing'
-          ? 'Movie is now showing.'
-          : 'Movie has been hidden.',
-        'success',
-      );
+      showToast(status === 'showing' ? 'Đã chuyển phim sang trạng thái đang chiếu.' : 'Đã ẩn phim.', 'success');
     } catch (error) {
       console.error(error);
-      showToast('Cannot connect to backend.', 'error');
+      showToast('Không thể kết nối đến máy chủ.', 'error');
     }
   };
 
   const addScreening = async (movie: MovieItem) => {
-    if (!validateScreening()) {
-      showToast(
-        'Please correct the screening information.',
-        'warning',
-      );
+    if (!validateScreening(movie)) {
+      showToast('Vui lòng kiểm tra thông tin lịch chiếu.', 'warning');
       return;
     }
 
@@ -542,9 +535,7 @@ export default function MovieListPage() {
         `${API}/${movie.id}/screenings`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: adminHeaders(true),
           body: JSON.stringify({
             show_date: screening.date,
             show_time: screening.time,
@@ -557,7 +548,7 @@ export default function MovieListPage() {
 
       if (!response.ok) {
         showToast(
-          data?.error || 'Cannot add screening.',
+          data?.error || 'Không thể thêm lịch chiếu.',
           'error',
         );
         return;
@@ -577,12 +568,12 @@ export default function MovieListPage() {
       await loadMovies();
 
       showToast(
-        'Screening added successfully.',
+        'Đã thêm lịch chiếu.',
         'success',
       );
     } catch (error) {
       console.error(error);
-      showToast('Cannot connect to backend.', 'error');
+      showToast('Không thể kết nối đến máy chủ.', 'error');
     }
   };
 
@@ -590,7 +581,7 @@ export default function MovieListPage() {
     movie: MovieItem,
     item: Screening,
   ) => {
-    if (!window.confirm('Delete this screening?')) {
+    if (!window.confirm('Bạn có chắc muốn xóa lịch chiếu này không?')) {
       return;
     }
 
@@ -599,6 +590,7 @@ export default function MovieListPage() {
         `${API}/${movie.id}/screenings/${item.id}`,
         {
           method: 'DELETE',
+          headers: adminHeaders(),
         },
       );
 
@@ -606,7 +598,7 @@ export default function MovieListPage() {
 
       if (!response.ok) {
         showToast(
-          data?.error || 'Cannot delete screening.',
+          data?.error || 'Không thể xóa lịch chiếu.',
           'error',
         );
         return;
@@ -615,12 +607,12 @@ export default function MovieListPage() {
       await loadMovies();
 
       showToast(
-        'Screening deleted successfully.',
+        'Đã xóa lịch chiếu.',
         'success',
       );
     } catch (error) {
       console.error(error);
-      showToast('Cannot connect to backend.', 'error');
+      showToast('Không thể kết nối đến máy chủ.', 'error');
     }
   };
 
@@ -666,7 +658,7 @@ export default function MovieListPage() {
                 color: '#202020',
               }}
             >
-              Movie List
+              Danh sách phim
             </Typography>
 
             <Typography
@@ -675,7 +667,7 @@ export default function MovieListPage() {
                 mt: 0.5,
               }}
             >
-              Manage movies, screening times and cinema rooms.
+              Quản lý phim, lịch chiếu và phòng chiếu.
             </Typography>
           </Box>
 
@@ -692,7 +684,7 @@ export default function MovieListPage() {
               boxShadow: 2,
             }}
           >
-            Add new movie
+            Thêm phim
           </Button>
         </Box>
 
@@ -720,10 +712,10 @@ export default function MovieListPage() {
                 }}
               >
                 {item === 'all'
-                  ? 'All'
+                  ? 'Tất cả'
                   : item === 'showing'
-                    ? 'Showing'
-                    : 'Hidden'}
+                    ? 'Đang chiếu'
+                    : 'Đã ẩn'}
               </Button>
             ),
           )}
@@ -742,7 +734,7 @@ export default function MovieListPage() {
               }}
             >
               <Typography color="text.secondary">
-                No movies found.
+                Không tìm thấy phim nào.
               </Typography>
             </Paper>
           ) : (
@@ -817,7 +809,7 @@ export default function MovieListPage() {
 
                         <Chip
                           size="small"
-                          label={movie.status}
+                          label={movie.status === 'Showing' ? 'Đang chiếu' : 'Đã ẩn'}
                           color={
                             movie.status === 'Showing'
                               ? 'success'
@@ -844,7 +836,7 @@ export default function MovieListPage() {
 
                         <Chip
                           size="small"
-                          label={`${movie.duration} min`}
+                          label={`${movie.duration} phút`}
                           variant="outlined"
                         />
 
@@ -867,8 +859,8 @@ export default function MovieListPage() {
                       <Tooltip
                         title={
                           isExpanded
-                            ? 'Hide details'
-                            : 'Show details'
+                            ? 'Ẩn lịch chiếu'
+                            : 'Hiện lịch chiếu'
                         }
                       >
                         <IconButton
@@ -886,7 +878,7 @@ export default function MovieListPage() {
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title="Edit movie">
+                      <Tooltip title="Sửa thông tin phim">
                         <IconButton
                           onClick={() =>
                             openEditMovie(movie)
@@ -899,8 +891,8 @@ export default function MovieListPage() {
                       <Tooltip
                         title={
                           movie.status === 'Showing'
-                            ? 'Hide movie'
-                            : 'Show movie'
+                            ? 'Ẩn phim'
+                            : 'Hiện phim'
                         }
                       >
                         <IconButton
@@ -921,7 +913,7 @@ export default function MovieListPage() {
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title="Delete movie">
+                      <Tooltip title="Xóa phim">
                         <IconButton
                           color="error"
                           onClick={() =>
@@ -948,7 +940,7 @@ export default function MovieListPage() {
                         fontWeight={800}
                         mb={1.5}
                       >
-                        Screening times & rooms
+                        Lịch chiếu và phòng chiếu
                       </Typography>
 
                       <Stack spacing={1.2} mb={3}>
@@ -959,7 +951,7 @@ export default function MovieListPage() {
                               fontSize: 14,
                             }}
                           >
-                            No screening times yet.
+                            Phim chưa có lịch chiếu.
                           </Typography>
                         ) : (
                           movie.screenings.map((item) => (
@@ -974,7 +966,7 @@ export default function MovieListPage() {
                             >
                               <Chip
                                 icon={<CalendarMonth />}
-                                label={`${item.date} · ${item.time} · Room ${item.room}`}
+                                label={`${item.date} · ${item.time} · Phòng ${item.room}`}
                                 sx={{
                                   borderRadius: 2,
                                 }}
@@ -993,7 +985,7 @@ export default function MovieListPage() {
                                   textTransform: 'none',
                                 }}
                               >
-                                Remove
+                                Xóa lịch
                               </Button>
                             </Box>
                           ))
@@ -1005,7 +997,7 @@ export default function MovieListPage() {
                         fontWeight={800}
                         mb={1.5}
                       >
-                        Add screening
+                        Thêm lịch chiếu
                       </Typography>
 
                       <Box
@@ -1018,7 +1010,7 @@ export default function MovieListPage() {
                       >
                         <TextField
                           type="date"
-                          label="Date"
+                          label="Ngày chiếu"
                           value={screening.date}
                           onChange={(e) => {
                             setScreening({
@@ -1045,7 +1037,7 @@ export default function MovieListPage() {
 
                         <TextField
                           type="time"
-                          label="Time"
+                          label="Giờ chiếu"
                           value={screening.time}
                           onChange={(e) => {
                             setScreening({
@@ -1096,7 +1088,7 @@ export default function MovieListPage() {
                             }}
                           >
                             <MenuItem value="">
-                              Select room
+                              Chọn phòng chiếu
                             </MenuItem>
 
                             {rooms.map((room) => (
@@ -1106,7 +1098,7 @@ export default function MovieListPage() {
                                   room.room_number,
                                 )}
                               >
-                                {room.type} - Room{' '}
+                                {room.type} - Phòng{' '}
                                 {room.room_number}
                               </MenuItem>
                             ))}
@@ -1138,7 +1130,7 @@ export default function MovieListPage() {
                             mt: 0.5,
                           }}
                         >
-                          Add Screening
+                          Thêm lịch chiếu
                         </Button>
                       </Box>
                     </Box>
@@ -1162,13 +1154,13 @@ export default function MovieListPage() {
             fontSize: 24,
           }}
         >
-          {editMovie ? 'Modify Movie' : 'Add New Movie'}
+          {editMovie ? 'Chỉnh sửa phim' : 'Thêm phim mới'}
         </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} mt={1}>
             <TextField
-              label="Title"
+              label="Tên phim"
               value={form.title}
               onChange={(e) => {
                 setForm({
@@ -1188,7 +1180,7 @@ export default function MovieListPage() {
             />
 
             <TextField
-              label="Genre"
+              label="Thể loại"
               value={form.genre}
               onChange={(e) => {
                 setForm({
@@ -1208,7 +1200,7 @@ export default function MovieListPage() {
             />
 
             <TextField
-              label="Duration (minutes)"
+              label="Thời lượng (phút)"
               type="number"
               value={form.duration}
               onChange={(e) => {
@@ -1235,7 +1227,7 @@ export default function MovieListPage() {
             />
 
             <TextField
-              label="Release date"
+              label="Ngày khởi chiếu"
               type="date"
               value={form.releaseDate}
               onChange={(e) => {
@@ -1261,7 +1253,7 @@ export default function MovieListPage() {
             />
 
             <TextField
-              label="Poster URL"
+              label="Đường dẫn áp phích"
               value={form.image}
               onChange={(e) => {
                 setForm({
@@ -1277,14 +1269,14 @@ export default function MovieListPage() {
               error={Boolean(movieErrors.image)}
               helperText={
                 movieErrors.image ||
-                'Use a valid http:// or https:// image URL.'
+                'Nhập đường dẫn ảnh bắt đầu bằng http:// hoặc https://.'
               }
               required
               fullWidth
             />
 
             <TextField
-              label="Trailer URL"
+              label="Đường dẫn trailer"
               value={form.trailerUrl}
               onChange={(e) => {
                 setForm({
@@ -1300,14 +1292,14 @@ export default function MovieListPage() {
               error={Boolean(movieErrors.trailerUrl)}
               helperText={
                 movieErrors.trailerUrl ||
-                'Use a valid http:// or https:// URL.'
+                'Nhập đường dẫn bắt đầu bằng http:// hoặc https://.'
               }
               required
               fullWidth
             />
 
             <TextField
-              label="Description"
+              label="Mô tả phim"
               value={form.description}
               onChange={(e) => {
                 setForm({
@@ -1323,7 +1315,7 @@ export default function MovieListPage() {
               error={Boolean(movieErrors.description)}
               helperText={
                 movieErrors.description ||
-                'Minimum 10 characters.'
+                'Mô tả cần có ít nhất 10 ký tự.'
               }
               multiline
               rows={4}
@@ -1345,7 +1337,7 @@ export default function MovieListPage() {
               textTransform: 'none',
             }}
           >
-            Cancel
+            Hủy
           </Button>
 
           <Button
@@ -1357,7 +1349,7 @@ export default function MovieListPage() {
               px: 3,
             }}
           >
-            {editMovie ? 'Save Changes' : 'Add Movie'}
+            {editMovie ? 'Lưu thay đổi' : 'Thêm phim'}
           </Button>
         </DialogActions>
       </Dialog>

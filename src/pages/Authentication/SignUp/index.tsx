@@ -114,7 +114,7 @@ const SignUpPage: React.FC = () => {
         // 2. Tự động chuyển hướng sang trang SignIn (http://localhost:5173/signin)
         navigate('/signin');
       } else {
-        alert(data.message || 'Đăng ký thất bại. Email có thể đã tồn tại!');
+        alert(data.error || data.message || 'Đăng ký thất bại. Email có thể đã tồn tại!');
       }
     } catch (error) {
       console.error('Lỗi khi gọi API đăng ký:', error);

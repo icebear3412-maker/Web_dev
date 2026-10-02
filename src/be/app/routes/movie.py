@@ -3,9 +3,17 @@ from uuid import uuid4
 from flask import Blueprint, jsonify, request
 
 from app.db import get_db_connection
+from app.security import require_user
 
 
 movie_router = Blueprint("movie", __name__)
+
+
+def _serialize_date_or_time(value):
+    """Return PostgreSQL date/time values consistently as JSON strings."""
+    if value is None:
+        return ""
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
 
 
 def movie_to_json(row):
@@ -25,6 +33,7 @@ def movie_to_json(row):
 
 
 @movie_router.route("", methods=["GET"])
+@require_user(admin_only=True)
 def get_movies():
     conn = get_db_connection()
 
@@ -43,18 +52,19 @@ def get_movies():
 
 
 @movie_router.route("", methods=["POST"])
+@require_user(admin_only=True)
 def create_movie():
     data = request.get_json() or {}
 
     title = str(data.get("title", "")).strip()
 
     if not title:
-        return jsonify({"error": "Title is required"}), 400
+        return jsonify({"error": "Vui lòng nhập tên phim"}), 400
 
     status = str(data.get("status", "showing")).lower()
 
     if status not in {"showing", "hidden"}:
-        return jsonify({"error": "Invalid movie status"}), 400
+        return jsonify({"error": "Trạng thái phim không hợp lệ"}), 400
 
     conn = get_db_connection()
 
@@ -94,6 +104,7 @@ def create_movie():
 
 
 @movie_router.route("/<movie_id>", methods=["PATCH"])
+@require_user(admin_only=True)
 def update_movie(movie_id):
     data = request.get_json() or {}
 
@@ -121,7 +132,7 @@ def update_movie(movie_id):
             value = str(value).lower()
 
             if value not in {"showing", "hidden"}:
-                return jsonify({"error": "Invalid movie status"}), 400
+                return jsonify({"error": "Trạng thái phim không hợp lệ"}), 400
 
         if key in {"duration", "release_date"}:
             value = str(value)
@@ -130,7 +141,7 @@ def update_movie(movie_id):
         values.append(value)
 
     if not fields:
-        return jsonify({"error": "No fields to update"}), 400
+        return jsonify({"error": "Không có thông tin nào để cập nhật"}), 400
 
     values.append(movie_id)
 
@@ -154,7 +165,7 @@ def update_movie(movie_id):
 
         if movie is None:
             conn.rollback()
-            return jsonify({"error": "Movie not found"}), 404
+            return jsonify({"error": "Không tìm thấy phim"}), 404
 
         conn.commit()
 
@@ -168,6 +179,7 @@ def update_movie(movie_id):
 
 
 @movie_router.route("/<movie_id>", methods=["DELETE"])
+@require_user(admin_only=True)
 def delete_movie(movie_id):
     conn = get_db_connection()
 
@@ -187,13 +199,13 @@ def delete_movie(movie_id):
 
         if movie is None:
             conn.rollback()
-            return jsonify({"error": "Movie not found"}), 404
+            return jsonify({"error": "Không tìm thấy phim"}), 404
 
         conn.commit()
 
         return jsonify({
             "id": str(movie["id"]),
-            "message": "Movie deleted successfully",
+            "message": "Đã xóa phim",
         })
 
     except Exception:
@@ -204,6 +216,7 @@ def delete_movie(movie_id):
 
 
 @movie_router.route("/rooms", methods=["GET"])
+@require_user(admin_only=True)
 def get_rooms():
     conn = get_db_connection()
 
@@ -229,6 +242,7 @@ def get_rooms():
 
 
 @movie_router.route("/<movie_id>/screenings", methods=["GET"])
+@require_user(admin_only=True)
 def get_screenings(movie_id):
     conn = get_db_connection()
 
@@ -256,16 +270,8 @@ def get_screenings(movie_id):
         return jsonify([
             {
                 "id": str(row["id"]),
-                "date": (
-                    row["show_date"].isoformat()
-                    if row["show_date"]
-                    else ""
-                ),
-                "time": (
-                    row["show_time"].isoformat()
-                    if row["show_time"]
-                    else ""
-                ),
+                "date": _serialize_date_or_time(row["show_date"]),
+                "time": _serialize_date_or_time(row["show_time"]),
                 "room": str(row["cinema_room_number"]),
                 "room_name": row["room_name"] or "",
                 "room_type": row["room_type"] or "",
@@ -277,6 +283,7 @@ def get_screenings(movie_id):
 
 
 @movie_router.route("/<movie_id>/screenings", methods=["POST"])
+@require_user(admin_only=True)
 def create_screening(movie_id):
     data = request.get_json() or {}
 
@@ -286,13 +293,13 @@ def create_screening(movie_id):
 
     if not show_date or not show_time or room_number is None:
         return jsonify({
-            "error": "Date, time and cinema room are required"
+            "error": "Vui lòng chọn ngày chiếu, giờ chiếu và phòng chiếu"
         }), 400
 
     try:
         room_number = int(room_number)
     except (TypeError, ValueError):
-        return jsonify({"error": "Invalid cinema room number"}), 400
+        return jsonify({"error": "Mã phòng chiếu không hợp lệ"}), 400
 
     conn = get_db_connection()
 
@@ -300,12 +307,19 @@ def create_screening(movie_id):
         cur = conn.cursor()
 
         cur.execute(
-            "SELECT id FROM movies WHERE id = %s",
+            "SELECT id, release_date FROM movies WHERE id = %s",
             (movie_id,),
         )
 
-        if cur.fetchone() is None:
-            return jsonify({"error": "Movie not found"}), 404
+        movie = cur.fetchone()
+        if movie is None:
+            return jsonify({"error": "Không tìm thấy phim"}), 404
+
+        release_date = _serialize_date_or_time(movie["release_date"])
+        if release_date and show_date < release_date[:10]:
+            return jsonify({
+                "error": "Ngày chiếu không được trước ngày khởi chiếu của phim"
+            }), 400
 
         cur.execute(
             """
@@ -319,7 +333,7 @@ def create_screening(movie_id):
         room = cur.fetchone()
 
         if room is None:
-            return jsonify({"error": "Cinema room not found"}), 404
+            return jsonify({"error": "Không tìm thấy phòng chiếu"}), 404
 
         cur.execute(
             """
@@ -334,7 +348,7 @@ def create_screening(movie_id):
         )
 
         if cur.fetchone() is not None:
-            return jsonify({"error": "Showtime already exists"}), 409
+            return jsonify({"error": "Lịch chiếu này đã tồn tại"}), 409
 
         cur.execute(
             """
@@ -360,15 +374,19 @@ def create_screening(movie_id):
 
         return jsonify({
             "id": str(row["id"]),
-            "date": row["show_date"].isoformat(),
-            "time": row["show_time"].isoformat(),
+            "date": _serialize_date_or_time(row["show_date"]),
+            "time": _serialize_date_or_time(row["show_time"]),
             "room": str(row["cinema_room_number"]),
             "room_name": room["name"] or "",
             "room_type": room["type"] or "",
         }), 201
 
-    except Exception:
+    except Exception as error:
         conn.rollback()
+        if getattr(error, "pgcode", None) == "23505":
+            return jsonify({
+                "error": "Phòng chiếu đã có lịch vào ngày và giờ này"
+            }), 409
         raise
     finally:
         conn.close()
@@ -378,6 +396,7 @@ def create_screening(movie_id):
     "/<movie_id>/screenings/<screening_id>",
     methods=["DELETE"],
 )
+@require_user(admin_only=True)
 def delete_screening(movie_id, screening_id):
     conn = get_db_connection()
 
@@ -397,13 +416,13 @@ def delete_screening(movie_id, screening_id):
 
         if row is None:
             conn.rollback()
-            return jsonify({"error": "Showtime not found"}), 404
+            return jsonify({"error": "Không tìm thấy lịch chiếu"}), 404
 
         conn.commit()
 
         return jsonify({
             "id": str(row["id"]),
-            "message": "Showtime deleted successfully",
+            "message": "Đã xóa lịch chiếu",
         })
 
     except Exception:

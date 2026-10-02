@@ -4,8 +4,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { publicRoutes } from '@/routes';
 import DefaultLayout from '@/layouts/DefaultLayout';
 import AdminLayout from '@/layouts/AdminLayout';
-import AdminPage from '@/pages/AdminPage';
+import AdminPage from '@/pages/Adminpage';
 import MovieListPage from '@/pages/Admin/Movies';
+import AdminTransactionsPage from '@/pages/Admin/Transactions';
 import type { IRoute } from '@/types';
 //import PrivateRoute from '@/routes/PrivateRoute';
 
@@ -29,6 +30,16 @@ const App: React.FC = () => {
           element={
             <AdminLayout>
               <MovieListPage />
+            </AdminLayout>
+          }
+        />
+
+        {/* Admin - Transactions */}
+        <Route
+          path="/admin/transactions"
+          element={
+            <AdminLayout>
+              <AdminTransactionsPage />
             </AdminLayout>
           }
         />

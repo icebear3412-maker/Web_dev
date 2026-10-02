@@ -80,8 +80,10 @@ const SignInPage: React.FC = () => {
 
       if (response.ok) {
         // 2. Lưu trạng thái đăng nhập / Token / User vào localStorage
-        if (data.token) {
-          localStorage.setItem('token', data.token);
+        const accessToken = data.access_token || data.token;
+        if (accessToken) {
+          localStorage.setItem('token', accessToken);
+          localStorage.setItem('access_token', accessToken);
         }
         localStorage.setItem('user', JSON.stringify(data.user || { email }));
         if (rememberMe) {
@@ -91,9 +93,14 @@ const SignInPage: React.FC = () => {
         alert('Đăng nhập thành công!');
 
         // 3. Chuyển hướng người dùng về Trang Chủ (http://localhost:5173/)
-        navigate('/');
+        const signedInUser = data.user;
+        navigate(
+          signedInUser?.role === 'admin' && signedInUser.email?.toLowerCase() === 'admin@gmail.com'
+            ? '/admin/movies'
+            : '/',
+        );
       } else {
-        alert(data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
+        alert(data.error || data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
       }
     } catch (error) {
       console.error('Lỗi khi gọi API đăng nhập:', error);

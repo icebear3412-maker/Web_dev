@@ -13,7 +13,7 @@ export interface Movie {
   trailer_url?: string | null;
 }
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:2000').replace(
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(
   /\/$/,
   '',
 );
@@ -59,6 +59,9 @@ export interface PublicBooking {
   format?: string | null;
   movie_title: string;
   title_vn?: string | null;
+  cinema_name?: string | null;
+  room_name?: string | null;
+  room_number?: number | null;
   seats: Array<{ seat_code: string }>;
 }
 

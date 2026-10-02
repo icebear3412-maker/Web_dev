@@ -7,6 +7,9 @@ from flask import g, jsonify, request
 from backend.app.db import get_db_connection
 
 
+ADMIN_ACCOUNT_EMAIL = "admin@gmail.com"
+
+
 def require_user(admin_only=False):
     """Load the active user from a verified bearer access token."""
     def decorator(handler):
@@ -30,13 +33,16 @@ def require_user(admin_only=False):
             try:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, role, status FROM users WHERE id = %s",
+                        "SELECT id, name, email, role, status FROM users WHERE id = %s",
                         (user_id,),
                     )
                     user = cur.fetchone()
                 if not user or user["status"] != "active":
                     return jsonify({"error": "Account is unavailable"}), 403
-                if admin_only and user["role"] != "admin":
+                if admin_only and (
+                    user["role"] != "admin"
+                    or user["email"].strip().lower() != ADMIN_ACCOUNT_EMAIL
+                ):
                     return jsonify({"error": "Administrator access required"}), 403
                 g.current_user = user
             finally:

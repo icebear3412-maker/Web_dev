@@ -11,7 +11,6 @@ import {
   Tabs,
   Tab,
   Divider,
-  Chip,
   Card,
   CardContent,
   Table,
@@ -26,9 +25,12 @@ import {
   ConfirmationNumberOutlined,
   CardGiftcardOutlined,
   EditOutlined,
+  AdminPanelSettingsOutlined,
+  LogoutOutlined,
   SaveOutlined,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '@/services/movies';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,13 +51,12 @@ const UserProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAdminAccount, setIsAdminAccount] = useState(false);
 
   // State thông tin người dùng (Đã bỏ phone và dob)
   const [userData, setUserData] = useState({
     fullName: '',
     email: '',
-    membershipTier: '',
-    rewardPoints: 0,
   });
 
   // State lịch sử đặt vé
@@ -63,7 +64,7 @@ const UserProfilePage: React.FC = () => {
 
   // 1. Kiểm tra đăng nhập & Gọi API lấy thông tin Profile + Booking History
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
 
     // Nếu chưa đăng nhập, tự động chuyển về trang /signin
     if (!token) {
@@ -73,7 +74,7 @@ const UserProfilePage: React.FC = () => {
 
     const fetchUserData = async () => {
       try {
-        const res = await fetch('http://localhost:5000/user/profile', {
+        const res = await fetch(`${API_BASE_URL}/user/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -83,25 +84,65 @@ const UserProfilePage: React.FC = () => {
           setUserData({
             fullName: result.data.full_name || '',
             email: result.data.email || '',
-            membershipTier: result.data.membership_tier || 'Member',
-            rewardPoints: result.data.reward_points || 0,
           });
+        } else if (res.status === 401 || res.status === 403) {
+          ['token', 'access_token', 'accessToken', 'user', 'rememberMe'].forEach((key) =>
+            localStorage.removeItem(key),
+          );
+          navigate('/signin', { replace: true });
+        } else if (!res.ok) {
+          alert(result.error || 'Không thể tải thông tin tài khoản.');
         }
       } catch (err) {
         console.error('Lỗi khi lấy thông tin profile từ BE:', err);
       }
     };
 
+    const fetchAdminAccess = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = await res.json();
+        const verifiedUser = result?.user;
+        setIsAdminAccount(
+          res.ok &&
+            verifiedUser?.role === 'admin' &&
+            verifiedUser.email?.toLowerCase() === 'admin@gmail.com',
+        );
+      } catch (err) {
+        setIsAdminAccount(false);
+        console.error('Lỗi khi xác thực quyền quản trị:', err);
+      }
+    };
+
     const fetchBookingHistory = async () => {
       try {
-        const res = await fetch('http://localhost:5000/user/bookings', {
+        const res = await fetch(`${API_BASE_URL}/bookings`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
         const result = await res.json();
-        if (res.ok && result.data) {
-          setBookingHistory(result.data);
+        if (res.ok && Array.isArray(result.bookings)) {
+          setBookingHistory(result.bookings.map((booking: any) => {
+            const showDate = String(booking.show_date || '').slice(0, 10);
+            const [year, month, day] = showDate.split('-');
+            const dateLabel = year && month && day ? `${day}/${month}/${year}` : showDate;
+            const timeLabel = String(booking.show_time || '').slice(0, 5);
+
+            return {
+              id: booking.booking_ref,
+              movieTitle: booking.title_vn?.trim() || booking.movie_title || 'Phim',
+              cinema: booking.cinema_name || 'Rạp chiếu',
+              room: booking.room_name || `Phòng ${booking.room_number ?? ''}`,
+              seats: Array.isArray(booking.seats)
+                ? booking.seats.map((seat: { seat_code: string }) => seat.seat_code).join(', ')
+                : '',
+              showtime: `${timeLabel} - ${dateLabel}`,
+              totalPrice: `${Number(booking.total_amount || 0).toLocaleString('vi-VN')} VNĐ`,
+            };
+          }));
         }
       } catch (err) {
         console.error('Lỗi khi lấy lịch sử đặt vé từ BE:', err);
@@ -109,6 +150,7 @@ const UserProfilePage: React.FC = () => {
     };
 
     fetchUserData();
+    fetchAdminAccess();
     fetchBookingHistory();
   }, [navigate]);
 
@@ -117,10 +159,17 @@ const UserProfilePage: React.FC = () => {
   };
 
   // 2. Gọi API cập nhật Họ và tên
+  const handleLogout = () => {
+    ['token', 'access_token', 'accessToken', 'user', 'rememberMe'].forEach((key) =>
+      localStorage.removeItem(key),
+    );
+    navigate('/signin', { replace: true });
+  };
+
   const handleSaveProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/user/profile', {
+      const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+      const res = await fetch(`${API_BASE_URL}/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -133,6 +182,25 @@ const UserProfilePage: React.FC = () => {
 
       const result = await res.json();
       if (res.ok) {
+        if (result.data) {
+          setUserData({
+            fullName: result.data.full_name || '',
+            email: result.data.email || '',
+          });
+          try {
+            const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({
+              ...storedUser,
+              name: result.data.full_name,
+              email: result.data.email,
+            }));
+          } catch {
+            localStorage.setItem('user', JSON.stringify({
+              name: result.data.full_name,
+              email: result.data.email,
+            }));
+          }
+        }
         setIsEditing(false);
         alert(result.message || 'Cập nhật thông tin tài khoản thành công!');
       } else {
@@ -165,7 +233,7 @@ const UserProfilePage: React.FC = () => {
                   fontWeight: 700,
                 }}
               >
-                {userData.fullName ? userData.fullName.charAt(0).toUpperCase() : 'U'}
+                {userData.fullName.trim().charAt(0).toLocaleUpperCase('vi-VN') || 'U'}
               </Avatar>
 
               <Typography variant="h6" sx={{ fontWeight: 700, color: '#111' }}>
@@ -175,26 +243,35 @@ const UserProfilePage: React.FC = () => {
                 {userData.email}
               </Typography>
 
-              <Chip
-                label={userData.membershipTier}
-                sx={{
-                  backgroundColor: '#e51922',
-                  color: '#fff',
-                  fontWeight: 700,
-                  mb: 2,
-                }}
-              />
+              {isAdminAccount && (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AdminPanelSettingsOutlined />}
+                  onClick={() => navigate('/admin')}
+                  sx={{
+                    mt: 1,
+                    mb: 1,
+                    bgcolor: '#e51922',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: '#c81018' },
+                  }}
+                >
+                  Quyền quản trị
+                </Button>
+              )}
 
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2 }}>
-                <Typography variant="body2" sx={{ color: '#666' }}>
-                  Điểm thưởng CGV:
-                </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#e51922' }}>
-                  {userData.rewardPoints} P
-                </Typography>
-              </Box>
+              <Button
+                fullWidth
+                variant="outlined"
+                color="error"
+                startIcon={<LogoutOutlined />}
+                onClick={handleLogout}
+                sx={{ mt: 1, textTransform: 'none', fontWeight: 700 }}
+              >
+                Đăng xuất tài khoản
+              </Button>
             </Paper>
           </Grid>
 
@@ -285,9 +362,23 @@ const UserProfilePage: React.FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {bookingHistory.map((row) => (
+                      {bookingHistory.length === 0 ? (
+                        <TableRow key="no-bookings">
+                          <TableCell colSpan={5} align="center" sx={{ color: '#666' }}>
+                            Bạn chưa có vé đã đặt.
+                          </TableCell>
+                        </TableRow>
+                      ) : bookingHistory.map((row) => (
                         <TableRow key={row.id}>
-                          <TableCell sx={{ fontWeight: 700, color: '#e51922' }}>{row.id}</TableCell>
+                          <TableCell>
+                            <Button
+                              size="small"
+                              onClick={() => navigate(`/check_ticket?reference=${encodeURIComponent(row.id)}`)}
+                              sx={{ fontWeight: 700, color: '#e51922', minWidth: 0, p: 0 }}
+                            >
+                              {row.id}
+                            </Button>
+                          </TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>{row.movieTitle}</TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>

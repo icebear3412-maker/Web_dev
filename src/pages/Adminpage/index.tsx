@@ -3,6 +3,7 @@ import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import MovieIcon from '@mui/icons-material/Movie';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import { useNavigate } from 'react-router-dom';
 
 const AdminPage: React.FC = () => {
@@ -48,7 +49,7 @@ const AdminPage: React.FC = () => {
               color: '#e51b23',
             }}
           >
-            ADMIN
+            QUẢN TRỊ
           </Typography>
 
           <Typography
@@ -61,7 +62,7 @@ const AdminPage: React.FC = () => {
               textTransform: 'uppercase',
             }}
           >
-            Cinema Management
+            Quản lý rạp chiếu
           </Typography>
         </Box>
 
@@ -84,7 +85,7 @@ const AdminPage: React.FC = () => {
             },
           }}
         >
-          Dashboard
+          Tổng quan
         </Button>
 
         {/* Movie List */}
@@ -106,7 +107,7 @@ const AdminPage: React.FC = () => {
             },
           }}
         >
-          Movie List
+          Danh sách phim
         </Button>
 
         {/* Transactions */}
@@ -127,7 +128,7 @@ const AdminPage: React.FC = () => {
             },
           }}
         >
-          Transactions
+          Giao dịch
         </Button>
       </Box>
 
@@ -143,24 +144,49 @@ const AdminPage: React.FC = () => {
           },
         }}
       >
-        {/* Page title */}
-        <Typography
+        {/* Page title and link back to the public landing page */}
+        <Box
           sx={{
-            fontFamily: "'Roboto Condensed', sans-serif",
-            fontSize: {
-              xs: 32,
-              sm: 38,
-              md: 46,
-            },
-            fontWeight: 900,
-            letterSpacing: 1,
-            color: '#29241f',
-            lineHeight: 1.1,
-            marginBottom: 1.5,
+            display: 'flex',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+            mb: 1.5,
           }}
         >
-          ADMIN DASHBOARD
-        </Typography>
+          <Typography
+            sx={{
+              fontFamily: "'Roboto Condensed', sans-serif",
+              fontSize: {
+                xs: 32,
+                sm: 38,
+                md: 46,
+              },
+              fontWeight: 900,
+              letterSpacing: 1,
+              color: '#29241f',
+              lineHeight: 1.1,
+            }}
+          >
+            BẢNG ĐIỀU KHIỂN QUẢN TRỊ
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<HomeOutlinedIcon />}
+            onClick={() => navigate('/')}
+            sx={{
+              color: '#e51b23',
+              borderColor: '#e51b23',
+              textTransform: 'none',
+              fontWeight: 700,
+              flexShrink: 0,
+              '&:hover': { borderColor: '#c9151b', backgroundColor: '#fff4dd' },
+            }}
+          >
+            Về trang chính
+          </Button>
+        </Box>
 
         {/* Red divider */}
         <Box
@@ -179,7 +205,7 @@ const AdminPage: React.FC = () => {
             marginBottom: 5,
           }}
         >
-          Manage your cinema system
+          Quản lý hệ thống rạp chiếu phim
         </Typography>
 
         {/* ==================== CARDS ==================== */}
@@ -246,7 +272,7 @@ const AdminPage: React.FC = () => {
                   marginBottom: 1,
                 }}
               >
-                Movie List
+                Danh sách phim
               </Typography>
 
               <Typography
@@ -257,7 +283,7 @@ const AdminPage: React.FC = () => {
                   marginBottom: 3,
                 }}
               >
-                Add, edit, hide and delete movies.
+                Thêm, chỉnh sửa, ẩn và xóa phim.
               </Typography>
 
               <Button
@@ -279,7 +305,7 @@ const AdminPage: React.FC = () => {
                   },
                 }}
               >
-                Open Movie List
+                Mở danh sách phim
               </Button>
             </CardContent>
           </Card>
@@ -337,7 +363,7 @@ const AdminPage: React.FC = () => {
                   marginBottom: 1,
                 }}
               >
-                Transactions
+                Giao dịch
               </Typography>
 
               <Typography
@@ -348,7 +374,7 @@ const AdminPage: React.FC = () => {
                   marginBottom: 3,
                 }}
               >
-                View and manage customer transactions.
+                Xem và quản lý giao dịch của khách hàng.
               </Typography>
 
               <Button
@@ -370,7 +396,7 @@ const AdminPage: React.FC = () => {
                   },
                 }}
               >
-                Open Transactions
+                Mở danh sách giao dịch
               </Button>
             </CardContent>
           </Card>
