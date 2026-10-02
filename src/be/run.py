@@ -10,12 +10,16 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app.routes.auth import auth_router
 from app.routes.bookings import bookings_router
+from app.routes.movie import movie_router
 from app.routes.movies import movies_router
 
 server = Flask(__name__)
 CORS(server)
 
 server.register_blueprint(auth_router, url_prefix="/auth")
+# Keep the admin CRUD API separate from both the public movie API and the
+# frontend's /admin/movies page route.
+server.register_blueprint(movie_router, url_prefix="/api/admin/movies")
 server.register_blueprint(movies_router, url_prefix="/movies")
 server.register_blueprint(bookings_router, url_prefix="/bookings")
 
