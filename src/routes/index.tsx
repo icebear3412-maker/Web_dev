@@ -11,6 +11,7 @@ import SignUpPage from '@/pages/Authentication/SignUp';
 import SignInPage from '@/pages/Authentication/SignIn';
 import ForgotPasswordPage from '@/pages/Authentication/ForgotPassword';
 import BookCinemaRoom from '@/pages/BookCinemaRoom';
+import UserProfilePage from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
 
 const publicRoutes: IRoute[] = [
@@ -21,6 +22,7 @@ const publicRoutes: IRoute[] = [
   { path: '/cinemas', component: CinemaRooms, layout: DefaultLayout },
   { path: '/rent', component: CinemaRooms, layout: DefaultLayout },
   { path: '/booking', component: BookingPage, layout: DefaultLayout },
+  { path: '/profile', component: UserProfilePage, layout: DefaultLayout },
   { path: '/signup', component: SignUpPage, layout: null },
   { path: '/signin', component: SignInPage, layout: null },
   { path: '/forgot-password', component: ForgotPasswordPage, layout: null },
