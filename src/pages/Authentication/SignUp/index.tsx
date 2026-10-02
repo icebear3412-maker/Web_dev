@@ -19,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
+import cgvLogo from '../../../assets/logo.png';
 import RandomCaptcha from '../components/Captcha';
 
 const SignUpPage: React.FC = () => {
@@ -68,7 +69,8 @@ const SignUpPage: React.FC = () => {
     return '';
   };
 
-  const handleSignUp = () => {
+  // CẬP NHẬT HÀM HANDLESIGNUP GỌI API & CHUYỂN HƯỚNG
+  const handleSignUp = async () => {
     const fnErr = validateFullName(fullName);
     const eErr = validateEmail(email);
     const pErr = validatePassword(password);
@@ -91,7 +93,33 @@ const SignUpPage: React.FC = () => {
       return;
     }
 
-    alert('Đăng ký tài khoản thành công!');
+    try {
+      // 1. Gọi API đăng ký tới Flask Backend (port 5000)
+      const response = await fetch('http://localhost:5000/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
+        // 2. Tự động chuyển hướng sang trang SignIn (http://localhost:5173/signin)
+        navigate('/signin');
+      } else {
+        alert(data.error || data.message || 'Đăng ký thất bại. Email có thể đã tồn tại!');
+      }
+    } catch (error) {
+      console.error('Lỗi khi gọi API đăng ký:', error);
+      alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra server Flask!');
+    }
   };
 
   const inputStyle = {
@@ -147,7 +175,7 @@ const SignUpPage: React.FC = () => {
     >
       <CssBaseline />
 
-      {/* CHỮ GIỚI THIỆU BÊN GÓC TRÁI DƯỚI */}
+      {/* CHỮ GIỚI THIỆU & LOGO BÊN GÓC TRÁI DƯỚI */}
       <Box
         sx={{
           position: 'absolute',
@@ -171,19 +199,26 @@ const SignUpPage: React.FC = () => {
           CHÀO MỪNG BẠN ĐẾN VỚI
         </Typography>
 
-        <Typography
+        {/* LOGO CGV CLICK VỀ TRANG CHỦ */}
+        <Box
+          component="img"
+          src={cgvLogo}
+          alt="CGV Logo"
+          onClick={() => navigate('/')}
           sx={{
-            color: '#e51922',
-            fontSize: { sm: 34, md: 42 },
-            fontWeight: 900,
-            fontFamily: "'Roboto', 'Arial', sans-serif",
-            lineHeight: 1.1,
-            mt: 0.5,
-            textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+            height: { xs: 45, sm: 55, md: 65 },
+            objectFit: 'contain',
+            mt: 1,
+            mb: 1,
+            cursor: 'pointer',
+            display: 'block',
+            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.8))',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'scale(1.05)',
+            },
           }}
-        >
-          CINEMA TICKET
-        </Typography>
+        />
 
         <Typography
           sx={{

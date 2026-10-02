@@ -1,16 +1,18 @@
 import os
 import time
 from pathlib import Path
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
 
-#Load private local settings before building the PostgreSQL connection address.
-ROOT_DIR = Path(__file__).resolve().parents[2]
+import psycopg2
+from dotenv import load_dotenv
+from psycopg2.extras import RealDictCursor
+
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT_DIR / ".env")
 
+
 def get_database_url():
-    """Retrieve PostgreSQL connection URI with fallbacks."""
+    """Get PostgreSQL connection URL from environment variables."""
     if "DATABASE_URL" in os.environ:
         return os.environ["DATABASE_URL"]
 
@@ -19,26 +21,28 @@ def get_database_url():
     db = os.environ.get("POSTGRES_DB", "cinema_db")
     user = os.environ.get("POSTGRES_USER", "postgres")
     password = os.environ.get("POSTGRES_PASSWORD", "postgres")
+
     return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
 
 def get_db_connection(max_retries=3, retry_delay=1):
     """
-    Acquire a connection to PostgreSQL returning rows as dictionaries.
-    Retries gracefully if the server is starting up.
+    Connect to PostgreSQL and return rows as dictionaries.
     """
-    #Every feature file calls this function instead of creating its own database connection.
-    db_url = get_database_url()
+    database_url = get_database_url()
+
     for attempt in range(1, max_retries + 1):
         try:
-            #RealDictCursor lets code read columns by name, for example movie["title"].
-            conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
-            return conn
-        except Exception as e:
+            return psycopg2.connect(
+                database_url,
+                cursor_factory=RealDictCursor,
+            )
+        except Exception as error:
             if attempt == max_retries:
-                print(f"[DB] Connection failed after {max_retries} attempts: {e}")
-                print("[DB] Troubleshooting guide:")
-                print("  1. Verify PostgreSQL service is running (port 4444).")
-                print("  2. Check DATABASE_URL or POSTGRES_PASSWORD in .env file.")
-                print("  3. To reset password in psql: ALTER USER postgres PASSWORD 'postgres';")
+                print(
+                    f"[DB] Connection failed after "
+                    f"{max_retries} attempts: {error}"
+                )
                 raise
+
             time.sleep(retry_delay)

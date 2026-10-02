@@ -1,6 +1,6 @@
 import { Box, Button, Container, Link } from '@mui/material';
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import PersonIcon from '@mui/icons-material/Person';
@@ -10,11 +10,25 @@ import logo from '@/assets/logo.png';
 const utilityLinks: IButtonWithIconAndDisplayText[] = [
   { display: 'Tin mới & ưu đãi', link: '/new_and_sale', icon: ConfirmationNumberIcon },
   { display: 'Vé của tôi', link: '/check_ticket', icon: LoyaltyIcon },
-  { display: 'Đăng nhập / Đăng ký', link: '/signin', icon: PersonIcon },
 ];
 
 const HeaderComponent: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => Boolean(localStorage.getItem('token') || localStorage.getItem('access_token')),
+  );
+
+  useEffect(() => {
+    const syncAuthentication = () => {
+      setIsLoggedIn(Boolean(localStorage.getItem('token') || localStorage.getItem('access_token')));
+    };
+
+    syncAuthentication();
+    window.addEventListener('storage', syncAuthentication);
+    return () => window.removeEventListener('storage', syncAuthentication);
+  }, [location]);
+
   return (
     <header className="site-header">
       <Box className="top-bar">
@@ -25,6 +39,14 @@ const HeaderComponent: React.FC = () => {
                 <Icon /> {display}
               </Link>
             ))}
+            <Link
+              aria-label={isLoggedIn ? 'Mở trang tài khoản' : 'Đăng nhập hoặc đăng ký'}
+              title={isLoggedIn ? 'Tài khoản của tôi' : 'Đăng nhập / Đăng ký'}
+              onClick={() => navigate(isLoggedIn ? '/profile' : '/signin')}
+            >
+              <PersonIcon />
+              {!isLoggedIn && ' Đăng nhập / Đăng ký'}
+            </Link>
           </Box>
         </Container>
       </Box>
@@ -38,12 +60,12 @@ const HeaderComponent: React.FC = () => {
           <img src={logo} alt="CGV" />
         </Button>
         <nav className="main-menu">
-          <Button onClick={() => navigate('/now-showing')}>PHIM</Button>
-          <Button onClick={() => navigate('/cinemas')}>RẠP CHIẾU</Button>
+          <Button onClick={() => navigate('/booking')}>PHIM</Button>
+          <Button onClick={() => navigate('/booking')}>RẠP CHIẾU</Button>
           <Button onClick={() => navigate('/new_and_sale')}>THÀNH VIÊN</Button>
           <Button onClick={() => navigate('/new_and_sale')}>SỰ KIỆN</Button>
         </nav>
-        <Button className="buy-ticket-button" onClick={() => navigate('/rent')}>
+        <Button className="buy-ticket-button" onClick={() => navigate('/booking')}>
           MUA VÉ NGAY
         </Button>
       </Container>

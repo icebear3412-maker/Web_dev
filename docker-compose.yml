@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    command: ['postgres', '-p', '3000']
+    container_name: cinema_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cinema_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '1000:3000'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d cinema_db -p 3000']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: cinema_web
+    restart: unless-stopped
+    ports:
+      - '${HOST_PORT:-2000}:5000'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:3000/cinema_db
+      PORT: 5000
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set in .env}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

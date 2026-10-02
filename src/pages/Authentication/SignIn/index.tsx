@@ -15,6 +15,7 @@ import {
 import { EmailOutlined, LockOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
+import cgvLogo from '../../../assets/logo.png';
 import RandomCaptcha from '../components/Captcha';
 
 const SignInPage: React.FC = () => {
@@ -45,7 +46,8 @@ const SignInPage: React.FC = () => {
     return '';
   };
 
-  const handleSignIn = () => {
+  // CẬP NHẬT HÀM HANDLESIGNIN GỌI API & CHUYỂN HƯỚNG
+  const handleSignIn = async () => {
     const eErr = validateEmail(email);
     const pErr = validatePassword(password);
 
@@ -61,7 +63,49 @@ const SignInPage: React.FC = () => {
       return;
     }
 
-    alert(`Đăng nhập thành công với tài khoản: ${email}`);
+    try {
+      // 1. Gọi API đăng nhập tới Flask Backend (port 5000)
+      const response = await fetch('http://localhost:5000/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 2. Lưu trạng thái đăng nhập / Token / User vào localStorage
+        const accessToken = data.access_token || data.token;
+        if (accessToken) {
+          localStorage.setItem('token', accessToken);
+          localStorage.setItem('access_token', accessToken);
+        }
+        localStorage.setItem('user', JSON.stringify(data.user || { email }));
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+        }
+
+        alert('Đăng nhập thành công!');
+
+        // 3. Chuyển hướng người dùng về Trang Chủ (http://localhost:5173/)
+        const signedInUser = data.user;
+        navigate(
+          signedInUser?.role === 'admin' && signedInUser.email?.toLowerCase() === 'admin@gmail.com'
+            ? '/admin/movies'
+            : '/',
+        );
+      } else {
+        alert(data.error || data.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
+      }
+    } catch (error) {
+      console.error('Lỗi khi gọi API đăng nhập:', error);
+      alert('Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra server Flask!');
+    }
   };
 
   const inputStyle = {
@@ -117,7 +161,7 @@ const SignInPage: React.FC = () => {
     >
       <CssBaseline />
 
-      {/* CHỮ GIỚI THIỆU BÊN GÓC TRÁI DƯỚI */}
+      {/* CHỮ GIỚI THIỆU & LOGO BÊN GÓC TRÁI DƯỚI */}
       <Box
         sx={{
           position: 'absolute',
@@ -141,19 +185,26 @@ const SignInPage: React.FC = () => {
           CHÀO MỪNG BẠN ĐẾN VỚI
         </Typography>
 
-        <Typography
+        {/* LOGO CGV CLICK VỀ TRANG CHỦ */}
+        <Box
+          component="img"
+          src={cgvLogo}
+          alt="CGV Logo"
+          onClick={() => navigate('/')}
           sx={{
-            color: '#e51922',
-            fontSize: { sm: 34, md: 42 },
-            fontWeight: 900,
-            fontFamily: "'Roboto', 'Arial', sans-serif",
-            lineHeight: 1.1,
-            mt: 0.5,
-            textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+            height: { xs: 45, sm: 55, md: 65 },
+            objectFit: 'contain',
+            mt: 1,
+            mb: 1,
+            cursor: 'pointer',
+            display: 'block',
+            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.8))',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'scale(1.05)',
+            },
           }}
-        >
-          CINEMA TICKET
-        </Typography>
+        />
 
         <Typography
           sx={{

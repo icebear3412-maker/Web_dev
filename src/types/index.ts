@@ -1,13 +1,44 @@
+import type { FC } from 'react';
 import type { SvgIconComponent } from '@mui/icons-material';
 
 interface IDefaultReactProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 interface IRoute {
   path: string;
-  component: React.FC;
-  layout: React.FC<IDefaultReactProps> | null;
+  component: FC;
+  layout: FC<IDefaultReactProps> | null;
+}
+
+interface Screening {
+  id: string;
+  time: string;
+  date: string;
+  room: string;
+}
+
+interface MovieItem {
+  id: string;
+  title: string;
+  genre: string;
+  image: string;
+  trailerUrl: string;
+  description: string;
+  duration: string;
+  releaseDate: string;
+  status: 'Showing' | 'Hidden';
+  screenings: Screening[];
+}
+
+interface MovieForm {
+  title: string;
+  genre: string;
+  image: string;
+  trailerUrl: string;
+  description: string;
+  duration: number;
+  releaseDate: string;
 }
 
 interface ICardWithLink {
@@ -35,11 +66,46 @@ interface IMovieCard {
   linkTo: string;
 }
 
+interface IRoomDetailResPayload {
+  occupiedSeat: string[];
+  size: [number, number];
+  price: number;
+}
+
+interface IMovieShowday {
+  date: number[];
+}
+
+interface IMovieShowTime {
+  time: number[];
+}
+
+interface IMovieInfoPayload {
+  image: string;
+  name: string;
+  time: number;
+  director: string;
+  genre: string;
+  actor: string;
+  releaseDate: string;
+  rating: number;
+  subtitle: string;
+  description: string;
+  trailerLink: string;
+}
+
 export type {
   IDefaultReactProps,
   IRoute,
+  Screening,
+  MovieItem,
+  MovieForm,
   ICardWithLink,
   ICardWithDescription,
-  IMovieCard,
   IButtonWithIconAndDisplayText,
+  IMovieCard,
+  IRoomDetailResPayload,
+  IMovieInfoPayload,
+  IMovieShowTime,
+  IMovieShowday,
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import QuickLinks from '@/pages/Landing/QuickLink';
 import CarouselSection from '@/pages/Landing/Carousel';
-import MovieSection from '@/pages/Landing/Movie';
+import MovieSection from '@/pages/Landing/movie';
 import EventSection from '@/pages/Landing/Event';
 import PartnerLine from '@/pages/Landing/Partner';
 import SideBanners from '@/pages/Landing/SideBanner';
