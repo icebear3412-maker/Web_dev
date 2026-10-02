@@ -1,6 +1,8 @@
 import type { IRoute } from '@/types';
 import DefaultLayout from '@/layouts/DefaultLayout';
+
 import LandingPage from '@/pages/Landing';
+import BookingPage from '@/pages/Booking';
 import MovieDetails from '@/pages/MovieDetails';
 import TicketCheck from '@/pages/TicketCheck';
 import EventDetails from '@/pages/EventDetails';
@@ -11,7 +13,6 @@ import ForgotPasswordPage from '@/pages/Authentication/ForgotPassword';
 import BookCinemaRoom from '@/pages/BookCinemaRoom';
 import NotFound from '@/pages/NotFound';
 
-
 const publicRoutes: IRoute[] = [
   { path: '/', component: LandingPage, layout: DefaultLayout },
   { path: '/movies/:movieId', component: MovieDetails, layout: DefaultLayout },
@@ -19,6 +20,7 @@ const publicRoutes: IRoute[] = [
   { path: '/events/:eventSlug', component: EventDetails, layout: DefaultLayout },
   { path: '/cinemas', component: CinemaRooms, layout: DefaultLayout },
   { path: '/rent', component: CinemaRooms, layout: DefaultLayout },
+  { path: '/booking', component: BookingPage, layout: DefaultLayout },
   { path: '/signup', component: SignUpPage, layout: null },
   { path: '/signin', component: SignInPage, layout: null },
   { path: '/forgot-password', component: ForgotPasswordPage, layout: null },
