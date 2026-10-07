@@ -102,7 +102,7 @@ Database mới được tạo sẵn rạp, phòng và ghế theo migration gốc
 
 ## Tài khoản quản trị
 
-Các trang `/admin`, `/admin/movies` và `/admin/transactions` dành cho tài khoản có quyền quản trị. Backend kiểm tra tài khoản có email `admin@gmail.com` và vai trò `admin`; repo không công bố mật khẩu mặc định. Hãy cấp quyền cho tài khoản quản trị trong database theo quy trình của môi trường đang dùng.
+Các trang `/admin`, `/admin/movies` và `/admin/transactions` dành cho tài khoản có quyền quản trị. Backend kiểm tra tài khoản có email `admin@gmail.com` và mật khẩu 12345678 và vai trò `admin`;
 
 ## Lệnh hữu ích
 
