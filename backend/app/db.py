@@ -15,7 +15,7 @@ def get_database_url():
         return os.environ["DATABASE_URL"]
 
     host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "4444")
+    port = os.environ.get("POSTGRES_PORT", "1000")
     db = os.environ.get("POSTGRES_DB", "cinema_db")
     user = os.environ.get("POSTGRES_USER", "postgres")
     password = os.environ.get("POSTGRES_PASSWORD", "postgres")
@@ -37,8 +37,7 @@ def get_db_connection(max_retries=3, retry_delay=1):
             if attempt == max_retries:
                 print(f"[DB] Connection failed after {max_retries} attempts: {e}")
                 print("[DB] Troubleshooting guide:")
-                print("  1. Verify PostgreSQL service is running (port 4444).")
+                print(f"  1. Verify PostgreSQL service is running (configured port: {os.environ.get('POSTGRES_PORT', '1000')}).")
                 print("  2. Check DATABASE_URL or POSTGRES_PASSWORD in .env file.")
-                print("  3. To reset password in psql: ALTER USER postgres PASSWORD 'postgres';")
                 raise
             time.sleep(retry_delay)

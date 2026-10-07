@@ -39,3 +39,4 @@ services:
 
 volumes:
   pgdata:
+    name: ${POSTGRES_VOLUME_NAME:-backend_upload_pgdata}

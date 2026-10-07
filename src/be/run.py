@@ -1,7 +1,9 @@
 import sys
 from pathlib import Path
+from datetime import date, datetime, time
 
 from flask import Flask
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -14,7 +16,16 @@ from app.routes.movie import movie_router
 from app.routes.movies import movies_router
 from app.routes.user import user_router
 
+class CinemaJSONProvider(DefaultJSONProvider):
+    @staticmethod
+    def default(value):
+        if isinstance(value, (date, datetime, time)):
+            return value.isoformat()
+        return DefaultJSONProvider.default(value)
+
+
 server = Flask(__name__)
+server.json = CinemaJSONProvider(server)
 CORS(server)
 
 server.register_blueprint(auth_router, url_prefix="/auth")

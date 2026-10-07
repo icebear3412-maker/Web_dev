@@ -2,8 +2,9 @@
 
 The Flask server listens on port `5000`. PostgreSQL is configured with
 `DATABASE_URL` (or the `POSTGRES_*` variables), and login requires `JWT_SECRET`.
-Apply the schema with `alembic -c alembic.ini upgrade head` before starting the
-server.
+From the project root, apply the schema with `python src/be/init_db.py` before
+starting the server. This supports fresh databases and existing backend_upload
+databases whose Alembic revision still predates their room-number columns.
 
 ## Movies
 
@@ -32,7 +33,7 @@ Administrators create showtimes with `POST /bookings/showtimes` and provision
 room seats with `POST /bookings/rooms/<room_number>/seats`, sending
 `{"seats":[{"seat_code":"A1","row_label":"A","seat_number":1}]}`.
 
-The current price calculation multiplies `movies.base_price` by the number of
+The current price calculation multiplies `cinema_rooms.ticket_price` by the number of
 selected seats. Seat category pricing and payment processing are not implemented.
 
 ## Login token

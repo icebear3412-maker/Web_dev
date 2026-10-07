@@ -21,7 +21,7 @@ if database_url:
         database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
     # Override the URL in alembic.ini without storing credentials in the repo.
-    config.set_main_option("sqlalchemy.url", database_url)
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 #This project writes migration operations by hand instead of generating from SQLAlchemy models, so there is no metadata for Alembic to inspect.
 target_metadata = None
@@ -42,6 +42,13 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    supplied_connection = config.attributes.get("connection")
+    if supplied_connection is not None:
+        context.configure(connection=supplied_connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
+        return
+
     """Connect to the configured database and apply migrations directly."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
